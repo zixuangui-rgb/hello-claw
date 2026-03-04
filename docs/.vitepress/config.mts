@@ -1,16 +1,12 @@
 import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 
-// 1. 获取环境变量并判断
-// 如果环境变量 EDGEONE 等于 '1'，说明在 EdgeOne 环境，使用根路径 '/'
-// 否则默认是 GitHub Pages 环境，使用仓库子路径 '/easy-vecdb/'
-const isEdgeOne = process.env.EDGEONE === '1'
-const baseConfig = isEdgeOne ? '/' : '/repo-template/'
+const baseConfig = '/'
 
 export default defineConfig({
   lang: 'zh-CN',
-  title: "Datawhale开源教程",
-  description: "AI前沿知识开源教程",
+  title: "Hello Claw",
+  description: "从零到一学习 OpenClaw：领养你的 AI 龙虾助理，或从零构建属于你的智能体",
   base: baseConfig,
   markdown: {
     math: true
@@ -19,7 +15,9 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     logo: '/datawhale-logo.png',
     nav: [
-      { text: 'PDF版本下载', link: 'https://github.com/datawhalechina/repo-template/releases' },
+      { text: '领养 Claw', link: '/adopt/' },
+      { text: '构建 Claw', link: '/build/' },
+      { text: 'GitHub', link: 'https://github.com/datawhalechina/hello-claw' },
     ],
     search: {
       provider: 'local',
@@ -40,26 +38,57 @@ export default defineConfig({
         }
       }
     },
-    sidebar: [
-      {
-        items: [
-          { text: '第1章：第1章的标题', link: '/chapter1/' },
-          { text: '第2章：第2章的标题', 
-            items: [
-              { text: '第2.1节：第2.1节的标题', link: '/chapter2/chapter2_1' },
-              { text: '第2.2节：第2.2节的标题', link: '/chapter2/chapter2_2' }
-            ]
-           }
-        ]
-      }
-    ],
+    sidebar: {
+      '/adopt/': [
+        {
+          text: '领养 Claw（使用篇）',
+          items: [
+            { text: '写在开头', link: '/adopt/' },
+            { text: '第1章 十分钟上手 OpenClaw', link: '/adopt/chapter1' },
+            { text: '第2章 理解 OpenClaw', link: '/adopt/chapter2' },
+            { text: '第3章 移动端接入', link: '/adopt/chapter3' },
+            { text: '第4章 自动化任务入门', link: '/adopt/chapter4' },
+            { text: '第5章 Skills 技能系统', link: '/adopt/chapter5' },
+            { text: '第6章 外部服务集成', link: '/adopt/chapter6' },
+            { text: '第7章 生产环境部署', link: '/adopt/chapter7' },
+            { text: '第8章 多模型与成本优化', link: '/adopt/chapter8' },
+            { text: '第9章 个人助理系统', link: '/adopt/chapter9' },
+            { text: '第10章 内容创作工具链', link: '/adopt/chapter10' },
+            { text: '第11章 开发者效率提升', link: '/adopt/chapter11' },
+            { text: '第12章 故障排查与优化', link: '/adopt/chapter12' }
+          ]
+        }
+      ],
+      '/build/': [
+        {
+          text: '构建 Claw（开发篇）',
+          items: [
+            { text: '写在开头', link: '/build/' },
+            { text: '第1章 Hello Agent', link: '/build/chapter1' },
+            { text: '第2章 工具调用', link: '/build/chapter2' },
+            { text: '第3章 Agent Loop', link: '/build/chapter3' },
+            { text: '第4章 Bash 工具', link: '/build/chapter4' },
+            { text: '第5章 解析 SKILL.md', link: '/build/chapter5' },
+            { text: '第6章 技能加载与触发', link: '/build/chapter6' },
+            { text: '第7章 编写第一个技能', link: '/build/chapter7' },
+            { text: '第8章 Telegram Bot', link: '/build/chapter8' },
+            { text: '第9章 消息路由', link: '/build/chapter9' },
+            { text: '第10章 飞书集成', link: '/build/chapter10' },
+            { text: '第11章 对话历史与 SOUL.md', link: '/build/chapter11' },
+            { text: '第12章 MEMORY.md 持久化', link: '/build/chapter12' },
+            { text: '第13章 Cron 调度器', link: '/build/chapter13' },
+            { text: '第14章 OpenClaw 源码导读', link: '/build/chapter14' }
+          ]
+        }
+      ]
+    },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/datawhalechina/repo-template' }
+      { icon: 'github', link: 'https://github.com/datawhalechina/hello-claw' }
     ],
 
     editLink: {
-      pattern: 'https://github.com/datawhalechina/repo-template/blob/main/docs/:path'
+      pattern: 'https://github.com/datawhalechina/hello-claw/blob/main/docs/:path'
     },
 
     footer: {
