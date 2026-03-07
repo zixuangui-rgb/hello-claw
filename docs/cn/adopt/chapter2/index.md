@@ -128,59 +128,6 @@ OpenClaw 会执行 `df -h` 命令并把结果发回飞书。
 
 **版本兼容**：建议使用 OpenClaw v2026.3+ 版本以获得最佳飞书支持。
 
-```yaml
-channels:
-  feishu:
-    enabled: true
-    app_id: cli_xxxxx
-    app_secret: xxxxx
-    verification_token: xxxxx
-    encrypt_key: xxxxx  # 可选，用于消息加密
-```
-
-这里的 `verification_token` 和 `encrypt_key` 可以在飞书开放平台的"事件订阅"页面找到。如果你不需要消息加密，`encrypt_key` 可以不填。但为了安全起见，建议启用加密，特别是在处理敏感信息时。
-
-重启 OpenClaw 服务：
-
-```bash
-openclaw restart
-```
-
-重启后，OpenClaw 会自动启动 webhook 服务器，监听来自飞书的消息。你可以在日志中看到类似"Feishu webhook server started on port 8080"的提示。
-
-### 2.4 测试连接
-
-在飞书中搜索你创建的机器人名称，添加为好友或邀请进群。发送一条消息"你好"，如果机器人能正常回复，说明接入成功。
-
-你可以在群聊中 @机器人 来触发响应，也可以在私聊中直接发送指令。例如：
-
-```
-@OpenClaw 帮我查看服务器磁盘使用情况
-```
-
-OpenClaw 会执行 `df -h` 命令并把结果发回飞书。如果你的服务器在 `/home` 目录下有大量文件，它还会智能地提醒你清理空间。这种实时反馈让你即使不在电脑前，也能随时掌握服务器状态。
-
-### 2.5 飞书群聊协作
-
-飞书的一个强大功能是群聊协作。你可以把 OpenClaw 机器人拉进工作群，让整个团队都能使用。比如在技术支持群里，任何人都可以 @机器人 查询系统状态、重启服务、查看日志。这样就不需要每个人都配置自己的 OpenClaw 实例，大大降低了使用门槛。
-
-不过要注意权限控制。在配置文件中可以设置白名单，限制只有特定用户才能执行敏感操作：
-
-```yaml
-channels:
-  feishu:
-    enabled: true
-    app_id: cli_xxxxx
-    app_secret: xxxxx
-    allowed_users:
-      - "ou_xxxxx"  # 用户的 Open ID
-      - "ou_yyyyy"
-    admin_users:
-      - "ou_xxxxx"  # 只有管理员能执行删除、重启等操作
-```
-
-获取用户的 Open ID 可以让机器人发送 `/whoami` 命令，它会返回当前用户的 ID。
-
 ## 3. Telegram 接入（推荐个人用户）
 
 Telegram 是全球流行的即时通讯应用，接入简单且功能强大。相比飞书，Telegram 更适合个人使用，而且支持端到端加密，隐私性更好。如果你不需要团队协作，只是想要一个随身的 AI 助理，Telegram 是最佳选择。
@@ -299,22 +246,6 @@ openclaw config set channels.telegram.customKeyboard '[["/status","/logs"],["/ba
 - 确认已 @机器人
 - 检查群聊 ID 是否在白名单中
 - 重新邀请机器人进群
-
-相比飞书，Telegram 有几个独特的优势。首先是跨平台支持更好，在 iOS、Android、Windows、macOS、Linux 甚至网页版都能无缝使用。其次是消息同步非常快，几乎没有延迟。最重要的是隐私保护，Telegram 的端到端加密确保你和机器人的对话不会被第三方窃听。
-
-另外，Telegram Bot 支持自定义键盘。你可以在配置中设置常用命令按钮：
-
-```yaml
-channels:
-  telegram:
-    enabled: true
-    bot_token: "xxxxx"
-    custom_keyboard:
-      - ["/status", "/logs"]
-      - ["/backup", "/restart"]
-```
-
-这样在聊天界面底部会出现这些按钮，点击即可快速发送命令，不用每次都手动输入。
 
 ## 4. 使用技巧
 
