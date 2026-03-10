@@ -76,7 +76,9 @@ export default defineConfig({
                 { text: '附录 B：配置文件详解', link: '/cn/appendix/appendix-b' },
                 { text: '附录 C：技能开发模板', link: '/cn/appendix/appendix-c' },
                 { text: '附录 D：学习资源汇总', link: '/cn/appendix/appendix-d' },
-                { text: '附录 E：云服务部署指南', link: '/cn/appendix/appendix-e' }
+                { text: '附录 E：云服务部署指南', link: '/cn/appendix/appendix-e' },
+                { text: '附录 F：社区之声与生态展望', link: '/cn/appendix/appendix-f' },
+                { text: '附录 G：安全防护指南', link: '/cn/appendix/appendix-g' }
               ]
             }
           ],
@@ -105,7 +107,9 @@ export default defineConfig({
                 { text: '附录 B：配置文件详解', link: '/cn/appendix/appendix-b' },
                 { text: '附录 C：技能开发模板', link: '/cn/appendix/appendix-c' },
                 { text: '附录 D：学习资源汇总', link: '/cn/appendix/appendix-d' },
-                { text: '附录 E：云服务部署指南', link: '/cn/appendix/appendix-e' }
+                { text: '附录 E：云服务部署指南', link: '/cn/appendix/appendix-e' },
+                { text: '附录 F：社区之声与生态展望', link: '/cn/appendix/appendix-f' },
+                { text: '附录 G：安全防护指南', link: '/cn/appendix/appendix-g' }
               ]
             }
           ],

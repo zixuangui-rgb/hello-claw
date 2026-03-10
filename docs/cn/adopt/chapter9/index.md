@@ -453,7 +453,7 @@ curl -fsSL https://raw.githubusercontent.com/volcengine/OpenViking/main/examples
 
 > **新手建议**：OpenClaw 原生记忆对于日常使用已经够用。如果你发现助理在长对话中频繁"失忆"，或者需要多个 OpenClaw 实例协作，再考虑安装 OpenViking。
 
-详细文档：[OpenViking 安装指南（中文）](https://github.com/LinQiang391/OpenViking/blob/main/examples/openclaw-memory-plugin/INSTALL-ZH.md)
+详细文档：[OpenViking 安装指南（中文）](https://github.com/volcengine/OpenViking/blob/main/examples/openclaw-memory-plugin/INSTALL-ZH.md)
 
 </details>
 

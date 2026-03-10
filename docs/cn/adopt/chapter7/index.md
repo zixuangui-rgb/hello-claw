@@ -122,7 +122,7 @@ openclaw onboard --install-daemon
 如果需要手动配置：
 
 ```bash
-sudo cat > /etc/systemd/system/openclaw.service << 'EOF'
+sudo tee /etc/systemd/system/openclaw.service > /dev/null << 'EOF'
 [Unit]
 Description=OpenClaw AI Agent
 After=network.target
@@ -236,7 +236,6 @@ docker run -d \
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
 services:
   openclaw:
     image: ghcr.io/openclaw/openclaw:latest
@@ -341,7 +340,7 @@ curl http://localhost:18789/readyz
 tar -czf openclaw-backup-$(date +%Y%m%d).tar.gz ~/openclaw-data/
 
 # 设置定时备份（每天凌晨 3 点）
-echo "0 3 * * * tar -czf /backups/openclaw-$(date +\%Y\%m\%d).tar.gz ~/openclaw-data/" | crontab -
+echo '0 3 * * * tar -czf /backups/openclaw-$(date +\%Y\%m\%d).tar.gz ~/openclaw-data/' | crontab -
 ```
 
 ### 6.3 磁盘管理

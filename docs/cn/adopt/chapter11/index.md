@@ -65,7 +65,7 @@ openclaw logs --limit 50 --plain
 
 ### 2.2 日志级别
 
-```json
+```jsonc
 // openclaw.json 中的 logging 配置
 {
   "logging": {

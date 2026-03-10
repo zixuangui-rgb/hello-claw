@@ -547,7 +547,7 @@ openclaw config set channels.telegram.customKeyboard '[["/status","/logs"],["/ba
 
 在移动端输入长指令不方便，可以在配置文件中设置快捷命令：
 
-```json
+```jsonc
 // openclaw.json
 {
   "shortcuts": {
@@ -566,7 +566,7 @@ openclaw config set channels.telegram.customKeyboard '[["/status","/logs"],["/ba
 
 你还可以设置带参数的快捷命令：
 
-```json
+```jsonc
 // openclaw.json
 {
   "shortcuts": {
@@ -602,7 +602,7 @@ openclaw config set channels.telegram.customKeyboard '[["/status","/logs"],["/ba
 
 在配置中启用语音识别：
 
-```json
+```jsonc
 // openclaw.json
 {
   "channels": {
@@ -631,7 +631,7 @@ openclaw config set channels.telegram.customKeyboard '[["/status","/logs"],["/ba
 
 **敏感操作二次确认**：对于删除文件、修改配置、重启服务等危险操作，可以设置二次确认：
 
-```json
+```jsonc
 // openclaw.json
 {
   "security": {
@@ -661,7 +661,7 @@ openclaw logs --follow
 
 在配置中可以为不同渠道设置不同的权限：
 
-```json
+```jsonc
 // openclaw.json
 {
   "channels": {

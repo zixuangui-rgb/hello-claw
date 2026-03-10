@@ -235,7 +235,7 @@ clawhub install sql-toolkit
 
 ### 4.2 配置数据库连接
 
-```json
+```jsonc
 // openclaw.json 中的 sql-toolkit 配置
 {
   "skills": {
