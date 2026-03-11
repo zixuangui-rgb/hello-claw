@@ -39,7 +39,32 @@
 
 ---
 
-**想要更多控制权？** AutoClaw 方便但灵活性有限。如果你想自由选择模型提供商、接入 QQ/飞书/Telegram 机器人、或部署到服务器，请继续阅读：
+## 备选方案：ClawX
+
+> 不想绑定智谱生态？[ClawX](https://github.com/ValueCell-ai/ClawX) 是另一个开源的 OpenClaw 桌面客户端，同样下载即用、无需终端操作。
+
+**ClawX vs AutoClaw**：
+
+| | AutoClaw | ClawX |
+|---|---|---|
+| **内置模型** | Pony-Alpha-2 + 免费积分 | 无，需自备 API Key |
+| **支持平台** | macOS / Windows | macOS / Windows / Linux |
+| **生态绑定** | 智谱生态 | 开源，提供商自选 |
+| **预装技能** | 50+ | 通过 ClawHub 市场安装 |
+| **渠道接入** | 一键接入飞书 | 需手动配置 |
+
+**安装步骤**：
+
+1. 访问 [ClawX Releases 页面](https://github.com/ValueCell-ai/ClawX/releases)，下载对应系统的安装包
+2. 双击安装，打开 ClawX
+3. 首次启动会进入设置向导，需要配置**模型 API Key**（获取方式见[第二章](/cn/adopt/chapter2/#_2-配置-ai-模型)）
+4. 渠道、技能等配置可以先跳过，后续章节会详细介绍
+
+> ClawX 的优势是**开源 + 多平台 + 提供商自由选择**，适合想要 GUI 体验但不想绑定特定生态的用户。如果你是 Linux 用户且不想用终端，ClawX 是目前唯一的桌面客户端选项。
+
+---
+
+**想要更多控制权？** AutoClaw 和 ClawX 方便但灵活性有限。如果你想自由选择模型提供商、接入 QQ/飞书/Telegram 机器人、或部署到服务器，请继续阅读：
 
 - 手动安装 OpenClaw → [第二章](/cn/adopt/chapter2/)
 - 接入聊天平台 → [第三章](/cn/adopt/chapter3/)
