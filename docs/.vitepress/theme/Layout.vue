@@ -54,8 +54,8 @@
           </span> 👋
         </h2>
 
-        <p class="!text-lg md:!text-xl text-gray-400 !mt-0 !mb-10 max-w-2xl !leading-relaxed">
-          你的 OpenClaw 终极助手。清理收件箱、发送邮件、管理日历、办理登机牌。一切都在你常用的聊天软件中完成。
+        <p class="!text-lg md:!text-2xl text-gray-300 !mt-0 !mb-10 max-w-3xl !leading-relaxed">
+          从零领养到深度构建，把 OpenClaw 训练成真正会办事的数字龙虾。
         </p>
 
         <div class="flex flex-col sm:flex-row items-center gap-4 mb-12">
@@ -66,7 +66,7 @@
             领养龙虾 <span class="opacity-80 group-hover:opacity-100 transition-opacity">→</span>
           </a>
           <a
-            :href="withBase('/cn/adopt/lobster-university')"
+            :href="withBase('/cn/university/finance')"
             class="w-full sm:w-auto group flex items-center justify-center gap-2 bg-[#0f1623] hover:bg-white/10 border border-[#ff4d4d]/30 text-white font-bold rounded-full py-3 px-7 transition-all duration-300 hover:scale-105 active:scale-95"
           >
             🎓 龙虾大学 <span class="text-[#ff4d4d] group-hover:text-[#ff6b6b] transition-colors">→</span>
@@ -269,7 +269,7 @@
         <div class="flex justify-center gap-6 text-[#ff4d4d] text-sm mb-8">
           <a :href="withBase('/cn/adopt/intro')" class="hover:text-[#ff6b6b] transition-colors">领养龙虾</a>
           <span class="text-gray-600">•</span>
-          <a :href="withBase('/cn/adopt/lobster-university')" class="hover:text-[#ff6b6b] transition-colors">🎓 龙虾大学</a>
+          <a :href="withBase('/cn/university/finance')" class="hover:text-[#ff6b6b] transition-colors">🎓 龙虾大学</a>
           <span class="text-gray-600">•</span>
           <a :href="withBase('/cn/build/')" class="hover:text-[#ff6b6b] transition-colors">构建龙虾</a>
           <span class="text-gray-600">•</span>
@@ -302,6 +302,9 @@
         <h1 class="!text-4xl md:!text-6xl !leading-tight !font-black !m-0">
           🎓 龙虾大学
         </h1>
+        <p class="!text-lg md:!text-2xl text-gray-300 !mt-6 !mb-0 max-w-3xl !leading-relaxed">
+          按场景挑对 Skills，让你的龙虾从“会聊”稳定进化成“会干活”。
+        </p>
         <div class="flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-4 mt-10 mb-14">
           <a href="https://clawhub.ai/" target="_blank" rel="noreferrer" class="w-full sm:w-auto group flex items-center justify-center gap-2 bg-[#ff4d4d] hover:bg-[#ff6b6b] text-white font-bold rounded-full py-3 px-7 transition-all duration-300 hover:scale-105 active:scale-95">
             ClawHub 原版入口 <span class="opacity-80 group-hover:opacity-100 transition-opacity">→</span>
@@ -321,6 +324,33 @@
           <a :href="withBase('/')" class="w-full sm:w-auto group flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-full py-3 px-7 transition-all duration-300 hover:scale-105 active:scale-95">
             返回首页 <span class="text-[#ff4d4d] group-hover:text-[#ff6b6b] transition-colors">→</span>
           </a>
+        </div>
+        <div class="w-full max-w-5xl mb-14">
+          <div class="flex items-center justify-between mb-8">
+            <h2 class="!text-3xl md:!text-4xl !font-extrabold !leading-tight flex items-center gap-2 !m-0">
+              <span class="text-[#ff4d4d]">&gt;</span> 推荐文章
+            </h2>
+            <a :href="withBase('/cn/adopt/chapter4')" class="text-[#ff4d4d] hover:text-[#ff6b6b] text-sm font-medium flex items-center gap-1 transition-colors">
+              看自动化基础 <span>→</span>
+            </a>
+          </div>
+          <div class="relative overflow-hidden rounded-2xl border border-white/5 bg-[#0f1623] shadow-xl">
+            <div class="marquee w-max flex items-stretch gap-6 py-6 px-6">
+              <a
+                v-for="(item, idx) in lobsterUniversityTickerItems"
+                :key="`${item.title}-${idx}`"
+                :href="withBase(item.link)"
+                class="block w-[280px] md:w-[360px] shrink-0 whitespace-normal bg-[#0a0f18] border border-white/5 rounded-2xl p-6 shadow-lg hover:-translate-y-1 transition-transform"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs uppercase tracking-wider text-gray-500">{{ item.track }}</span>
+                  <span class="text-[#ff4d4d] text-xs font-bold">→</span>
+                </div>
+                <h3 class="!text-xl !font-extrabold !leading-snug !m-0 text-white">{{ item.title }}</h3>
+                <p class="text-gray-400 text-sm mt-3 mb-0 leading-relaxed">{{ item.summary }}</p>
+              </a>
+            </div>
+          </div>
         </div>
         <h2 class="w-full max-w-5xl !text-3xl md:!text-4xl !font-extrabold !leading-tight flex items-center gap-2 mt-2 mb-8">
           <span class="text-[#ff4d4d]">&gt;</span> 1) 为何龙虾需要 Skills？
@@ -395,9 +425,42 @@ clawhub install github</pre>
         </div>
       </div>
 
+      <div class="w-full max-w-5xl mb-14">
+        <h2 class="!text-3xl md:!text-4xl !font-extrabold !leading-tight flex items-center gap-2 mb-8 mt-2">
+          <span class="text-[#ff4d4d]">&gt;</span> 3) 龙虾大学文章合集
+        </h2>
+        <p class="text-gray-300 !leading-relaxed !m-0">
+          先放两个假想场景，后续可以按你的真实案例持续扩充。
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <a
+            v-for="article in lobsterUniversityCollections"
+            :key="article.title"
+            :href="withBase(article.link)"
+            class="group block bg-[#0f1623] border border-white/5 rounded-2xl p-6 shadow-xl hover:-translate-y-1 transition-transform"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs uppercase tracking-wider text-gray-500">{{ article.badge }}</span>
+              <span class="text-[#ff4d4d] text-xs font-bold">→</span>
+            </div>
+            <h3 class="!text-xl !font-extrabold !leading-snug !m-0 text-white">{{ article.title }}</h3>
+            <p class="text-gray-400 text-sm mt-3 mb-0 leading-relaxed">{{ article.summary }}</p>
+            <div class="flex flex-wrap gap-2 mt-4">
+              <span
+                v-for="chip in article.chips"
+                :key="chip"
+                class="text-xs px-2 py-1 rounded-full bg-black/30 border border-white/10 text-gray-300"
+              >
+                {{ chip }}
+              </span>
+            </div>
+          </a>
+        </div>
+      </div>
+
       <div class="w-full max-w-6xl mt-2">
         <h2 class="!text-3xl md:!text-4xl !font-extrabold !leading-tight flex items-center gap-2 mb-8 mt-2">
-          <span class="text-[#ff4d4d]">&gt;</span> 3) Skills 展示板
+          <span class="text-[#ff4d4d]">&gt;</span> 4) Skills 展示板
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <div v-for="category in lobsterCategories" :key="category.title" class="bg-[#0f1623] border border-white/5 rounded-2xl p-5 shadow-xl">
@@ -436,10 +499,12 @@ const isHome = computed(() => {
 })
 const isLobsterUniversity = computed(() => {
   const path = route.path
-  return path === '/cn/adopt/lobster-university' ||
-    path === '/cn/adopt/lobster-university.html' ||
-    path === '/hello-claw/cn/adopt/lobster-university' ||
-    path === '/hello-claw/cn/adopt/lobster-university.html'
+  return path === '/cn/university/' ||
+    path === '/cn/university/index.html' ||
+    path === '/cn/university' ||
+    path === '/hello-claw/cn/university/' ||
+    path === '/hello-claw/cn/university/index.html' ||
+    path === '/hello-claw/cn/university'
 })
 
 const isHovered = ref(false)
@@ -486,7 +551,7 @@ const baseRecommendedSections = [
   { track: '领养龙虾', title: '第 1 章：十分钟上手 OpenClaw', summary: '一键安装、配置模型、常用命令与 Coding Plan 模式。', link: '/cn/adopt/chapter1' },
   { track: '领养龙虾', title: '第 3 章：移动端接入', summary: '把龙虾接到 Telegram / 飞书 / QQ，随时随地发一句话就能办事。', link: '/cn/adopt/chapter3' },
   { track: '领养龙虾', title: '第 4 章：自动化任务入门', summary: '定时提醒、自动化报告、周期性工作流，从“会聊”到“会做”。', link: '/cn/adopt/chapter4' },
-  { track: '领养龙虾', title: '龙虾大学：Skills 选修地图', summary: '菜单式挑选 skills，先装最常用的 5~10 个，让龙虾更强且不过载。', link: '/cn/adopt/lobster-university' },
+  { track: '龙虾大学', title: '龙虾大学：Skills 选修地图', summary: '菜单式挑选 skills，先装最常用的 5~10 个，让龙虾更强且不过载。', link: '/cn/university/finance' },
   { track: '领养龙虾', title: '第 5 章：Skills 技能系统', summary: '理解技能层次、安装市场技能、开发自定义技能并调试。', link: '/cn/adopt/chapter5' },
   { track: '领养龙虾', title: '第 7 章：生产环境部署', summary: 'VPS/Docker/24×7 运行、隔离与常见部署排障要点。', link: '/cn/adopt/chapter7' },
   { track: '构建龙虾', title: '第 1 章：核心定位与设计理念', summary: 'Agent Runtime vs Chatbot，四个原语工具的设计哲学。', link: '/cn/build/chapter1' },
@@ -509,10 +574,40 @@ const shuffle = (items) => {
 const recommendedSections = ref(shuffle(baseRecommendedSections))
 const tickerItems = computed(() => [...recommendedSections.value, ...recommendedSections.value])
 
+const lobsterUniversityRecommendedSections = [
+  { track: '龙虾大学', title: '龙虾大学：金融简报实战', summary: '盘前信息聚合、风险提醒、人工复核三段式工作流示例。', link: '/cn/university/finance' },
+  { track: '龙虾大学', title: '龙虾大学：邮件提醒实战', summary: '紧急邮件识别、分级提醒、自动生成后续待办。', link: '/cn/university/email-reminder' },
+  { track: '领养龙虾', title: '第 4 章：自动化任务入门', summary: '定时提醒、自动化报告、周期性工作流，从“会聊”到“会做”。', link: '/cn/adopt/chapter4' },
+  { track: '领养龙虾', title: '第 5 章：Skills 技能系统', summary: '理解技能层次、安装市场技能、开发自定义技能并调试。', link: '/cn/adopt/chapter5' },
+  { track: '领养龙虾', title: '第 7 章：多平台与外部服务', summary: '打通邮件、日历、数据库和浏览器自动化。', link: '/cn/adopt/chapter7' },
+  { track: '构建龙虾', title: '第 5 章：消息循环与事件驱动', summary: 'ReAct 循环、心跳机制、重试与超时，Agent 如何“活起来”。', link: '/cn/build/chapter5' },
+]
+
+const lobsterUniversityTickerItems = computed(
+  () => [...lobsterUniversityRecommendedSections, ...lobsterUniversityRecommendedSections]
+)
+
+const lobsterUniversityCollections = [
+  {
+    badge: '实战场景',
+    title: 'OpenClaw 用在金融：盘前简报与风险提醒',
+    summary: '将新闻、日历、持仓和价格异动串成一个可复用的金融助理工作流。',
+    chips: ['信息聚合', '风险提示', '人工复核'],
+    link: '/cn/university/finance',
+  },
+  {
+    badge: '实战场景',
+    title: 'OpenClaw 用在邮件提醒：高优先级邮件闭环',
+    summary: '按发件人、关键词和时段分级提醒，并同步待办与日程，减少漏处理。',
+    chips: ['邮件分级', '多端提醒', '待办同步'],
+    link: '/cn/university/email-reminder',
+  },
+]
+
 const quickLinks = [
   { icon: '🦞', text: '领养：写在开头', link: '/cn/adopt/intro' },
   { icon: '⚡', text: '领养：快速上手', link: '/cn/adopt/chapter1' },
-  { icon: '🎓', text: '领养：龙虾大学', link: '/cn/adopt/lobster-university' },
+  { icon: '🎓', text: '龙虾大学', link: '/cn/university/finance' },
   { icon: '📱', text: '领养：移动端接入', link: '/cn/adopt/chapter3' },
   { icon: '🛠️', text: '构建：写在开头', link: '/cn/build/' },
   { icon: '📚', text: '附录：命令速查表', link: '/cn/appendix/appendix-a' },

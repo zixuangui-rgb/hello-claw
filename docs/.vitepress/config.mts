@@ -28,6 +28,7 @@ export default defineConfig({
         },
         nav: [
           { text: '领养龙虾', link: '/cn/adopt/intro' },
+          { text: '龙虾大学', link: '/cn/university/finance', activeMatch: '^/cn/university/' },
           { text: '构建龙虾', link: '/cn/build/' },
           { text: 'GitHub', link: 'https://github.com/datawhalechina/hello-claw' },
         ],
@@ -78,7 +79,7 @@ export default defineConfig({
                     { text: '第4章 命令行与基础配置', link: '/cn/adopt/chapter4' },
                     { text: '第5章 定时任务', link: '/cn/adopt/chapter5' },
                     { text: '第6章 技能系统入门', link: '/cn/adopt/chapter6' },
-                    { text: '🎓 龙虾大学', link: '/cn/adopt/lobster-university' },
+                    { text: '🦞 龙虾点评', link: '/cn/adopt/lobster-review' },
                   ]
                 },
                 {
@@ -141,7 +142,7 @@ export default defineConfig({
                     { text: '第4章 命令行与基础配置', link: '/cn/adopt/chapter4' },
                     { text: '第5章 定时任务', link: '/cn/adopt/chapter5' },
                     { text: '第6章 技能系统入门', link: '/cn/adopt/chapter6' },
-                    { text: '🎓 龙虾大学', link: '/cn/adopt/lobster-university' },
+                    { text: '🦞 龙虾点评', link: '/cn/adopt/lobster-review' },
                   ]
                 },
                 {
@@ -197,6 +198,16 @@ export default defineConfig({
                 { text: '第13章 Skill 编写', link: '/cn/build/chapter13' },
                 { text: '第14章 渠道接入', link: '/cn/build/chapter14' },
                 { text: '第15章 完整定制案例', link: '/cn/build/chapter15' }
+              ]
+            }
+          ],
+          '/cn/university/': [
+            {
+              text: '龙虾大学',
+              items: [
+                { text: '🎓 龙虾大学：开始阅读', link: '/cn/university/finance' },
+                { text: '🧪 龙虾大学：金融实战', link: '/cn/university/finance' },
+                { text: '🧪 龙虾大学：邮件提醒实战', link: '/cn/university/email-reminder' }
               ]
             }
           ]

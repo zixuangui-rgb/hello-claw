@@ -11,7 +11,7 @@ hero:
       link: /cn/adopt/intro
     - theme: alt
       text: 🎓 龙虾大学
-      link: /cn/adopt/lobster-university
+      link: /cn/university/finance
     - theme: alt
       text: 深入开发
       link: /cn/build/
