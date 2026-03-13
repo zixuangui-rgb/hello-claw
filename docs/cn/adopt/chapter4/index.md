@@ -1,320 +1,294 @@
-# 第四章 Models 配置
+# 第四章 聊天平台接入
 
-> 本章带你了解 OpenClaw 的模型系统——如何选择、切换、配置模型提供商，以及当一个模型挂了时如何自动切换到备用方案。
+> 本章介绍如何将 OpenClaw 接入聊天平台，让你的龙虾拥有"联系方式"。完成后你可以在飞书中随时和它对话。
 
-> **前置条件**：已完成[第二章](/cn/adopt/chapter2/)的安装和基础模型配置。本章在此基础上深入讲解模型管理的进阶用法。
+> **AutoClaw 用户提示**：[AutoClaw](/cn/adopt/chapter1/) 已内置飞书一键接入（扫码即完成），可跳过本章。
 
----
+## 0. 支持的聊天平台
 
-## 0. 模型是什么？为什么要配置？
+OpenClaw 可以连接你日常使用的几乎所有聊天软件。每个渠道通过 Gateway 接入，文字消息全渠道支持，媒体和互动能力因平台而异。
 
-OpenClaw 本身不包含 AI 大脑——它需要连接一个**模型提供商**（如 OpenRouter、硅基流动、Anthropic、OpenAI 等）来获得智能。你在[第二章](/cn/adopt/chapter2/#_2-配置-ai-模型)已经配置了第一个模型，现在我们来了解更多玩法。
+| 渠道 | 说明 | 安装方式 |
+|------|------|---------|
+| **飞书 / Lark** | WebSocket 长连接；企业协作首选 | 内置 |
+| **WhatsApp** | 全球最流行；Baileys 库，需 QR 配对 | 内置 |
+| **Telegram** | Bot API（grammY）；支持群聊，API 最开放 | 内置 |
+| **Discord** | Bot API + Gateway；服务器、频道、私信 | 内置 |
+| **Slack** | Bolt SDK；工作区应用 | 内置 |
+| **Signal** | signal-cli；注重隐私 | 内置 |
+| **Google Chat** | Google Chat API；HTTP webhook | 内置 |
+| **iMessage** | BlueBubbles（推荐）或旧版 imsg CLI | 内置 |
+| **IRC** | 经典 IRC 服务器；频道 + 私信 | 内置 |
+| **WebChat** | Gateway 内置 Web 聊天界面 | 内置 |
+| **QQ** | QQ 开放平台 Bot API | 插件 |
+| **LINE** | LINE Messaging API | 插件 |
+| **Matrix** | Matrix 开放协议 | 插件 |
+| **Mattermost** | Bot API + WebSocket | 插件 |
+| **Microsoft Teams** | Bot Framework；企业支持 | 插件 |
+| **Nostr** | 去中心化协议 NIP-04 | 插件 |
+| **Twitch** | IRC 连接 | 插件 |
+| **Zalo** | Zalo Bot API（越南） | 插件 |
 
-**模型标识格式**：`provider/model`（提供商/模型名），例如：
-- `openrouter/stepfun/step-3.5-flash:free`（OpenRouter 上的免费模型）
-- `anthropic/claude-opus-4-6`（Anthropic 的 Claude Opus）
-- `openai/gpt-5.1-codex`（OpenAI 的 GPT 5.1）
-- `ollama/llama3.3`（本地运行的 Llama 模型）
+> **多渠道同时接入**：你可以同时连接多个平台，OpenClaw 会自动按来源路由消息。比如在飞书处理工作、在 Telegram 做个人助理——它们共享同一个 AI 大脑。
 
-> **小白提示**：可以把"模型"理解为不同品牌的 AI 大脑，"提供商"就是卖这些大脑的商店。有的商店贵但聪明，有的免费但简单——OpenClaw 让你自由组合。
+> **最快上手**：Telegram 配置最简单（只需一个 Bot Token），但在国内需要代理。本章以**飞书**为例——它与国内办公场景高度契合，深度集成文档、日历、多维表格等能力，能真正成为你的"数字分身"。
 
----
+## 1. 前置准备
 
-## 1. 快速上手
+在开始之前，确保：
 
-### 最简配置
+- 已完成 [第二章](/cn/adopt/chapter2/) 的安装，OpenClaw 正在运行（`openclaw status` 显示正常）
+- 拥有飞书账号
 
-编辑 `~/.openclaw/openclaw.json`（Windows：`C:\Users\你的用户名\.openclaw\openclaw.json`）：
+<details>
+<summary>个人用户也能用</summary>
 
-```json5
+即使你不是企业管理员，飞书也允许创建"企业自建应用"用于个人测试和使用，不需要企业认证。
+
+</details>
+
+## 2. 创建飞书应用
+
+### 第一步：登录飞书开放平台
+
+访问 [飞书开放平台](https://open.feishu.cn/app)，使用飞书账号登录。
+
+<!-- TODO: 补充飞书开放平台首页截图（创建应用按钮位置） -->
+
+<details>
+<summary>国际版 Lark 用户</summary>
+
+请访问 [Lark Open Platform](https://open.larksuite.com/app)，后续配置中需设置 `domain: "lark"`。
+
+</details>
+
+### 第二步：创建企业自建应用
+
+1. 点击"创建企业自建应用"
+2. 填写应用名称（如"OpenClaw 助理"）、描述、选择图标
+3. 点击"创建"进入应用详情页
+
+### 第三步：获取应用凭证
+
+进入"凭证与基础信息"页面，复制 **App ID**（格式 `cli_xxx`）和 **App Secret**。
+
+<!-- TODO: 补充飞书应用凭证页面截图（App ID 和 App Secret 位置） -->
+
+> **重要**：App Secret 务必立即复制保存，不要泄露给他人。
+
+### 第四步：配置权限
+
+进入"权限管理"页面，点击"批量导入"按钮，粘贴以下 JSON 一键导入所需权限：
+
+<!-- TODO: 补充飞书权限管理页面截图（批量导入按钮位置） -->
+
+```json
 {
-  agents: {
-    defaults: {
-      model: {
-        primary: "anthropic/claude-opus-4-6"
-      }
-    }
+  "scopes": {
+    "tenant": [
+      "contact:contact.base:readonly",
+      "docx:document:readonly",
+      "im:chat:read",
+      "im:chat:update",
+      "im:message.group_at_msg:readonly",
+      "im:message.p2p_msg:readonly",
+      "im:message.pins:read",
+      "im:message.pins:write_only",
+      "im:message.reactions:read",
+      "im:message.reactions:write_only",
+      "im:message:readonly",
+      "im:message:recall",
+      "im:message:send_as_bot",
+      "im:message:send_multi_users",
+      "im:message:send_sys_msg",
+      "im:message:update",
+      "im:resource",
+      "application:application:self_manage",
+      "cardkit:card:write",
+      "cardkit:card:read"
+    ],
+    "user": [
+      "contact:user.employee_id:readonly",
+      "offline_access",
+      "base:app:copy",
+      "base:field:create",
+      "base:field:delete",
+      "base:field:read",
+      "base:field:update",
+      "base:record:create",
+      "base:record:delete",
+      "base:record:retrieve",
+      "base:record:update",
+      "base:table:create",
+      "base:table:delete",
+      "base:table:read",
+      "base:table:update",
+      "base:view:read",
+      "base:view:write_only",
+      "base:app:create",
+      "base:app:update",
+      "base:app:read",
+      "board:whiteboard:node:create",
+      "board:whiteboard:node:read",
+      "calendar:calendar:read",
+      "calendar:calendar.event:create",
+      "calendar:calendar.event:delete",
+      "calendar:calendar.event:read",
+      "calendar:calendar.event:reply",
+      "calendar:calendar.event:update",
+      "calendar:calendar.free_busy:read",
+      "contact:contact.base:readonly",
+      "contact:user.base:readonly",
+      "contact:user:search",
+      "docs:document.comment:create",
+      "docs:document.comment:read",
+      "docs:document.comment:update",
+      "docs:document.media:download",
+      "docs:document:copy",
+      "docx:document:create",
+      "docx:document:readonly",
+      "docx:document:write_only",
+      "drive:drive.metadata:readonly",
+      "drive:file:download",
+      "drive:file:upload",
+      "im:chat.members:read",
+      "im:chat:read",
+      "im:message",
+      "im:message.group_msg:get_as_user",
+      "im:message.p2p_msg:get_as_user",
+      "im:message:readonly",
+      "search:docs:read",
+      "search:message",
+      "space:document:delete",
+      "space:document:move",
+      "space:document:retrieve",
+      "task:comment:read",
+      "task:comment:write",
+      "task:task:read",
+      "task:task:write",
+      "task:task:writeonly",
+      "task:tasklist:read",
+      "task:tasklist:write",
+      "wiki:node:copy",
+      "wiki:node:create",
+      "wiki:node:move",
+      "wiki:node:read",
+      "wiki:node:retrieve",
+      "wiki:space:read",
+      "wiki:space:retrieve",
+      "wiki:space:write_only"
+    ]
   }
 }
 ```
 
-保存后重启网关生效：
+> 批量导入会自动开通消息收发、云文档、多维表格、日历、任务等完整能力。
+
+<details>
+<summary>这些权限分别做什么？</summary>
+
+| 权限类别 | 代表权限 | 用途 |
+|---------|---------|------|
+| **消息（im:）** | `im:message`、`im:message:send_as_bot`、`im:resource` | 收发消息、图片、文件 |
+| **联系人（contact:）** | `contact:user.base:readonly` | 获取用户基础信息 |
+| **云文档（docx:/docs:）** | `docx:document:create`、`docx:document:readonly` | 创建和读取飞书文档 |
+| **多维表格（base:）** | `base:record:create`、`base:table:read` | 操作多维表格数据 |
+| **日历（calendar:）** | `calendar:calendar.event:create`、`calendar:calendar.event:read` | 管理日程 |
+| **任务（task:）** | `task:task:read`、`task:task:write` | 创建和管理飞书任务 |
+| **知识库（wiki:）** | `wiki:node:read`、`wiki:space:read` | 读写飞书知识库 |
+| **云空间（drive:/space:）** | `drive:file:upload`、`drive:file:download` | 上传下载文件 |
+
+如果你只需要基础聊天功能，最少只需 `im:message`、`im:message.p2p_msg:readonly`、`im:message.group_at_msg:readonly`、`im:message:send_as_bot`、`im:resource` 这几个消息相关权限即可。但建议导入完整权限以获得最佳体验。
+
+</details>
+
+导入权限后，点击"提交审核"。如果你是企业管理员可直接通过；否则需联系管理员审核。
+
+### 第五步：启用机器人能力
+
+进入"添加应用能力" → "机器人"页面：
+
+1. 开启机器人能力
+2. 设置机器人显示名称（如"OpenClaw 助理"）
+
+### 第六步：配置事件订阅
+
+> **重要**：在配置事件订阅之前，请先完成下面的[第 3 步](#_3-在-openclaw-中添加飞书渠道)（添加飞书渠道并确保网关在运行）。否则长连接设置可能保存失败。
+
+进入"事件与回调" → "事件配置"：
+
+1. 选择"**使用长连接接收事件**"（WebSocket 模式）
+2. 添加事件：`im.message.receive_v1`（接收消息事件）
+
+<details>
+<summary>什么是"长连接"？为什么推荐？</summary>
+
+传统的 webhook 方式需要你有一个公网可访问的地址，飞书把消息推送过来。而长连接（WebSocket）是反过来的——OpenClaw 主动连接飞书服务器并保持连接，消息实时送达。
+
+好处：不需要公网 IP、不需要域名、不需要端口映射，家用网络就能用。这也是 OpenClaw 的默认推荐方式。
+
+</details>
+
+### 第七步：发布应用
+
+1. 进入"版本管理与发布"
+2. 点击"创建版本"，填写版本号和更新说明
+3. 提交审核并发布
+4. 等待管理员审批（企业自建应用通常自动通过）
+
+## 3. 在 OpenClaw 中添加飞书渠道
+
+飞书应用创建完成后，回到终端，将飞书渠道添加到 OpenClaw。
+
+**方式一：命令行向导（推荐）**
 
 ```bash
-openclaw gateway restart
+openclaw channels add
 ```
 
-### 用向导配置（推荐新手）
+按交互式提示操作：
+1. 选择 "Feishu/Lark (飞书)"
+2. 输入 App ID 和 App Secret
+3. 其他选项保持默认即可
 
-不想手动编辑配置文件？运行向导即可：
+**方式二：通过配置向导添加**
+
+如果你刚安装完 OpenClaw、还没完成过初始配置，可以运行：
 
 ```bash
 openclaw onboard
 ```
 
-向导会引导你选择提供商、输入 API Key、设置默认模型——和[第二章](/cn/adopt/chapter2/#_2-配置-ai-模型)的流程一样。
+向导会引导你完成模型配置和渠道添加。
 
----
-
-## 2. 核心概念
-
-### 模型选择优先级
-
-当你发送一条消息时，OpenClaw 按以下顺序选择模型：
-
-```
-1. 主模型（agents.defaults.model.primary）
-   ↓ 如果主模型不可用
-2. 备用模型列表（agents.defaults.model.fallbacks），按顺序尝试
-   ↓ 每个模型内部
-3. 认证配置轮换（同一提供商的多个 API Key 之间轮换）
-```
-
-### 模型选择策略
-
-- **主模型**：设为你能用到的最强模型（如最新一代的旗舰模型）
-- **备用模型**：用于成本/延迟敏感的场景，或主模型挂了时的兜底
-- **安全提示**：如果 Agent 需要调用工具（Tool）或处理不可信输入，避免使用老旧/弱小的模型
-
-### 图片模型
-
-当主模型不支持图片输入时，OpenClaw 会自动使用 `agents.defaults.imageModel` 来处理图片：
-
-```json5
-{
-  agents: {
-    defaults: {
-      imageModel: {
-        primary: "openai/gpt-5.1-codex",
-        fallbacks: ["google/gemini-3-pro-preview"]
-      }
-    }
-  }
-}
-```
-
-<details>
-<summary>模型白名单（allowlist）</summary>
-
-如果你设置了 `agents.defaults.models`，它就变成了**白名单**——只有列表中的模型才能使用。用户尝试切换到白名单外的模型时，会收到提示：
-
-> Model "provider/model" is not allowed. Use /model to list available models.
-
-白名单配置示例：
-
-```json5
-{
-  agents: {
-    defaults: {
-      model: { primary: "anthropic/claude-sonnet-4-5" },
-      models: {
-        "anthropic/claude-sonnet-4-5": { alias: "Sonnet" },
-        "anthropic/claude-opus-4-6": { alias: "Opus" },
-      }
-    }
-  }
-}
-```
-
-设置别名后，用户可以在聊天中用 `/model Sonnet` 快速切换，而不用记住完整的模型 ID。
-
-如果不设置 `agents.defaults.models`，则没有白名单限制，用户可以自由切换任何模型。
-
-</details>
-
----
-
-## 3. 聊天中切换模型
-
-你可以在聊天过程中随时切换模型，无需重启：
-
-| 命令 | 说明 |
-|------|------|
-| `/model` | 打开模型选择器（数字列表） |
-| `/model list` | 同上，显示可用模型列表 |
-| `/model 3` | 选择列表中的第 3 个模型 |
-| `/model openai/gpt-5.2` | 直接指定模型 |
-| `/model status` | 查看当前模型详情（含认证状态） |
-
-> **注意**：模型 ID 以第一个 `/` 分隔提供商和模型名。如果模型名本身包含 `/`（如 OpenRouter 的模型），必须加上提供商前缀：`/model openrouter/moonshotai/kimi-k2`。
-
-<details>
-<summary>Discord 特殊交互</summary>
-
-在 Discord 上，`/model` 和 `/models` 会打开一个交互式选择器，包含提供商和模型的下拉菜单 + Submit 按钮，体验更直观。
-
-</details>
-
----
-
-## 4. CLI 模型管理
-
-除了在聊天中切换，你还可以用命令行管理模型：
-
-### 查看与设置
+添加完成后，重启网关使配置生效：
 
 ```bash
-# 查看当前模型状态（主模型 + 备用 + 认证概览）
-openclaw models status
-
-# 查看已配置的模型列表
-openclaw models list
-
-# 查看所有可用模型（完整目录）
-openclaw models list --all
-
-# 只看本地模型
-openclaw models list --local
-
-# 按提供商筛选
-openclaw models list --provider openai
-
-# 设置主模型
-openclaw models set openai/gpt-5.1-codex
-
-# 设置图片模型
-openclaw models set-image google/gemini-3-pro-preview
+openclaw gateway restart
 ```
 
-### 别名管理
-
-给常用模型起个好记的名字：
+验证网关状态：
 
 ```bash
-# 添加别名
-openclaw models aliases add Sonnet anthropic/claude-sonnet-4-5
-openclaw models aliases add Opus anthropic/claude-opus-4-6
-
-# 查看所有别名
-openclaw models aliases list
-
-# 删除别名
-openclaw models aliases remove Sonnet
-```
-
-### 备用模型管理
-
-```bash
-# 查看备用模型列表
-openclaw models fallbacks list
-
-# 添加备用模型（按添加顺序排列优先级）
-openclaw models fallbacks add openai/gpt-5.2
-openclaw models fallbacks add google/gemini-3-pro-preview
-
-# 删除某个备用模型
-openclaw models fallbacks remove openai/gpt-5.2
-
-# 清空所有备用模型
-openclaw models fallbacks clear
-
-# 图片备用模型管理（同理）
-openclaw models image-fallbacks list
-openclaw models image-fallbacks add google/gemini-3-pro-preview
-openclaw models image-fallbacks clear
+openclaw gateway status
 ```
 
 <details>
-<summary>models status 的详细输出说明</summary>
+<summary>手动编辑配置文件（高级）</summary>
 
-`openclaw models status` 输出包含：
+编辑 `~/.openclaw/openclaw.json`（Windows：`C:\Users\你的用户名\.openclaw\openclaw.json`）：
 
-- **当前主模型**和**备用模型**
-- **认证概览**：每个提供商的认证状态
-- **OAuth 到期状态**：24 小时内即将过期的 OAuth Token 会有警告
-- **缺失认证**：已配置但缺少凭证的提供商会显示 "Missing auth"
-
-有用的标志：
-- `--plain`：只输出当前主模型名（适合脚本使用）
-- `--json`：机器可读的 JSON 格式
-- `--check`：自动化检查（缺失/过期返回 exit 1，即将过期返回 exit 2）
-
-在远程服务器上，可以用 `--check` 配合监控脚本自动检测认证问题。
-
-</details>
-
-<details>
-<summary>扫描 OpenRouter 免费模型</summary>
-
-OpenClaw 提供了一个扫描工具，可以自动发现 OpenRouter 上的免费模型并按质量排序：
-
-```bash
-# 扫描免费模型（会实际探测模型能力）
-openclaw models scan
-
-# 仅查看元数据，不探测
-openclaw models scan --no-probe
-
-# 过滤条件
-openclaw models scan --min-params 70    # 最少 700 亿参数
-openclaw models scan --max-age-days 30  # 最近 30 天的模型
-openclaw models scan --provider meta    # 只看 Meta 的模型
-
-# 直接设为默认模型
-openclaw models scan --set-default
-```
-
-排名依据（优先级从高到低）：图片支持 → 工具调用延迟 → 上下文窗口大小 → 参数量。
-
-> 扫描需要 OpenRouter API Key（从认证配置或 `OPENROUTER_API_KEY` 环境变量获取）。没有 Key 时用 `--no-probe` 仅查看列表。
-
-</details>
-
----
-
-## 5. 模型提供商配置
-
-OpenClaw 支持两类提供商：
-
-- **内置提供商**：OpenClaw 自带目录，只需设置认证即可使用
-- **自定义提供商**：通过 `models.providers` 配置，适合国产模型、本地模型、代理网关等
-
-### 5.1 内置提供商
-
-以下提供商无需额外配置 `models.providers`，直接设置 API Key 即可：
-
-| 提供商 | provider 标识 | 认证方式 | 示例模型 |
-|--------|-------------|---------|---------|
-| OpenAI | `openai` | `OPENAI_API_KEY` | `openai/gpt-5.1-codex` |
-| Anthropic | `anthropic` | `ANTHROPIC_API_KEY` | `anthropic/claude-opus-4-6` |
-| OpenAI Code (Codex) | `openai-codex` | OAuth 登录 | `openai-codex/gpt-5.3-codex` |
-| OpenCode Zen | `opencode` | `OPENCODE_API_KEY` | `opencode/claude-opus-4-6` |
-| Google Gemini | `google` | `GEMINI_API_KEY` | `google/gemini-3-pro-preview` |
-| OpenRouter | `openrouter` | `OPENROUTER_API_KEY` | `openrouter/anthropic/claude-sonnet-4-5` |
-| Z.AI (GLM) | `zai` | `ZAI_API_KEY` | `zai/glm-5` |
-| xAI | `xai` | `XAI_API_KEY` | — |
-| Mistral | `mistral` | `MISTRAL_API_KEY` | `mistral/mistral-large-latest` |
-| Groq | `groq` | `GROQ_API_KEY` | — |
-| Cerebras | `cerebras` | `CEREBRAS_API_KEY` | — |
-| GitHub Copilot | `github-copilot` | `GH_TOKEN` | — |
-| Hugging Face | `huggingface` | `HF_TOKEN` | `huggingface/deepseek-ai/DeepSeek-R1` |
-| Kilo Gateway | `kilocode` | `KILOCODE_API_KEY` | `kilocode/anthropic/claude-opus-4.6` |
-| Vercel AI Gateway | `vercel-ai-gateway` | `AI_GATEWAY_API_KEY` | `vercel-ai-gateway/anthropic/claude-opus-4.6` |
-
-> **更多提供商**及获取地址见[附录 E 模型提供商选型指南](/cn/appendix/appendix-e)。
-
-<details>
-<summary>OpenAI 配置详情</summary>
-
-```json5
+```json
 {
-  agents: {
-    defaults: { model: { primary: "openai/gpt-5.1-codex" } }
-  }
-}
-```
-
-**认证**：设置环境变量 `OPENAI_API_KEY`，或在向导中选择 `openai-api-key`。
-
-**传输协议**：默认 `auto`（WebSocket 优先，SSE 兜底）。可按模型覆盖：
-
-```json5
-{
-  agents: {
-    defaults: {
-      models: {
-        "openai/gpt-5.1-codex": {
-          params: { transport: "sse" }  // 强制使用 SSE
+  "channels": {
+    "feishu": {
+      "enabled": true,
+      "connectionMode": "websocket",
+      "dmPolicy": "pairing",
+      "accounts": {
+        "main": {
+          "appId": "cli_xxx",
+          "appSecret": "你的App Secret"
         }
       }
     }
@@ -322,512 +296,134 @@ OpenClaw 支持两类提供商：
 }
 ```
 
-CLI 快捷设置：`openclaw onboard --auth-choice openai-api-key`
+修改后运行 `openclaw gateway restart` 生效。
 
 </details>
 
+> **注意顺序**：先完成此步骤（添加渠道 + 启动网关），再回到飞书开放平台配置事件订阅（[第六步](#第六步-配置事件订阅)）。网关未运行时，长连接设置会保存失败。
+
+## 4. 配对与首次对话
+
+### 第一步：发送测试消息
+
+在飞书中找到你创建的机器人，发送一条消息（如"你好"）。
+
+### 第二步：获取配对码
+
+机器人会回复一个**配对码**（8 位大写字母数字），表示有新用户请求对话。
+
+<!-- TODO: 补充飞书配对流程截图（配对码提示界面） -->
+
 <details>
-<summary>Anthropic 配置详情</summary>
+<summary>什么是"配对"（Pairing）？</summary>
 
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "anthropic/claude-opus-4-6" } }
-}
-```
+配对是 OpenClaw 的安全机制——不是任何人给你的机器人发消息都能得到回复。默认情况下，新用户发消息时会收到一个配对码，只有你在终端批准后，该用户才能正常对话。
 
-**认证方式（二选一）**：
+这防止了陌生人滥用你的 AI 助手（毕竟每次对话都消耗你的模型 API 额度）。
 
-1. **API Key（推荐）**：设置 `ANTHROPIC_API_KEY`
-2. **setup-token**：运行 `claude setup-token`，然后 `openclaw models status` 确认
-
-> **注意**：setup-token 是技术兼容方案，Anthropic 曾限制过在 Claude Code 以外使用订阅凭证。建议优先使用 API Key。
-
-CLI 快捷设置：`openclaw onboard --auth-choice token`
+配对码特点：
+- 8 位字符，大写字母和数字，不含易混淆字符（如 0/O、1/I）
+- 1 小时后过期
+- 每个渠道最多 3 个待批准请求
 
 </details>
 
-<details>
-<summary>OpenAI Code (Codex) 配置详情</summary>
+### 第三步：批准配对
 
-OpenAI Codex 使用 OAuth 登录（ChatGPT 账号），**明确支持**在 OpenClaw 等外部工具中使用。
-
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "openai-codex/gpt-5.3-codex" } }
-  }
-}
-```
-
-CLI 快捷设置：`openclaw onboard --auth-choice openai-codex` 或 `openclaw models auth login --provider openai-codex`
-
-</details>
-
-<details>
-<summary>Google Vertex / Antigravity / Gemini CLI</summary>
-
-除了 API Key 方式的 Google Gemini，还有三个 Google 相关提供商：
-
-| 提供商 | 标识 | 认证方式 |
-|--------|------|---------|
-| Google Vertex | `google-vertex` | gcloud ADC |
-| Antigravity | `google-antigravity` | OAuth 插件 |
-| Gemini CLI | `google-gemini-cli` | OAuth 插件 |
-
-**Antigravity / Gemini CLI** 是非官方集成，需先启用插件：
+在终端执行：
 
 ```bash
-# Antigravity
-openclaw plugins enable google-antigravity-auth
-openclaw models auth login --provider google-antigravity --set-default
-
-# Gemini CLI
-openclaw plugins enable google-gemini-cli-auth
-openclaw models auth login --provider google-gemini-cli --set-default
+openclaw pairing approve feishu <配对码>
 ```
 
-> **风险提示**：部分用户反映使用第三方客户端后 Google 账号受限。建议使用非关键账号，并自行评估 Google 服务条款。
+> 把 `<配对码>` 替换成你实际收到的码，例如 `openclaw pairing approve feishu 6KKG7C7K`。
 
-</details>
+你也可以在 OpenClaw Web 控制面板（`openclaw dashboard`）中点击批准按钮。
 
-### 5.2 国产模型提供商
+### 第四步：开始对话
 
-以下是常用的国产模型配置方式：
+配对成功后，回到飞书再给机器人发一条消息，它就能正常回复了！试试：
 
-#### 月之暗面 Kimi（Moonshot AI）
-
-Moonshot 使用 OpenAI 兼容接口：
-
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "moonshot/kimi-k2.5" } },
-  },
-  models: {
-    mode: "merge",
-    providers: {
-      moonshot: {
-        baseUrl: "https://api.moonshot.ai/v1",
-        apiKey: "${MOONSHOT_API_KEY}",
-        api: "openai-completions",
-        models: [{ id: "kimi-k2.5", name: "Kimi K2.5" }],
-      }
-    }
-  }
-}
+```
+你好，请介绍一下你自己
 ```
 
-可用模型：`kimi-k2.5`、`kimi-k2-0905-preview`、`kimi-k2-turbo-preview`、`kimi-k2-thinking`、`kimi-k2-thinking-turbo`
+恭喜！你的飞书 AI 助手已经上线。日常使用直接在飞书中和机器人对话即可，无需额外操作。
 
-#### Kimi Coding
+## 5. 群聊中使用
 
-Kimi Coding 使用 Anthropic 兼容接口：
+除了私聊，你还可以把机器人拉进飞书群聊，让团队成员共同使用。
 
-```json5
-{
-  env: { KIMI_API_KEY: "sk-..." },
-  agents: {
-    defaults: { model: { primary: "kimi-coding/k2p5" } },
-  }
-}
-```
-
-#### 火山引擎（豆包 Doubao）
-
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "volcengine/doubao-seed-1-8-251228" } },
-  }
-}
-```
-
-CLI：`openclaw onboard --auth-choice volcengine-api-key`
+**基本规则**：在群聊中需要 **@机器人** 才会触发回复，避免在群里刷屏。
 
 <details>
-<summary>火山引擎可用模型列表</summary>
+<summary>群聊访问控制</summary>
 
-**标准模型**（provider: `volcengine`）：
-| 模型 ID | 名称 |
-|---------|------|
-| `volcengine/doubao-seed-1-8-251228` | 豆包 Seed 1.8 |
-| `volcengine/doubao-seed-code-preview-251028` | 豆包 Seed Code |
-| `volcengine/kimi-k2-5-260127` | Kimi K2.5 |
-| `volcengine/glm-4-7-251222` | GLM 4.7 |
-| `volcengine/deepseek-v3-2-251201` | DeepSeek V3.2 128K |
+OpenClaw 通过 `groupPolicy` 控制群聊行为：
 
-**编码模型**（provider: `volcengine-plan`）：
-| 模型 ID | 名称 |
-|---------|------|
-| `volcengine-plan/ark-code-latest` | ARK Code |
-| `volcengine-plan/doubao-seed-code` | 豆包 Seed Code |
-| `volcengine-plan/kimi-k2.5` | Kimi K2.5 |
-| `volcengine-plan/kimi-k2-thinking` | Kimi K2 Thinking |
-| `volcengine-plan/glm-4.7` | GLM 4.7 |
+| 策略 | 行为 |
+|------|------|
+| `"open"` | 允许所有群聊，仍需 @提及才回复 |
+| `"allowlist"` | 仅允许白名单中的群（默认） |
+| `"disabled"` | 禁用所有群聊消息 |
 
-</details>
-
-#### 通义千问 Qwen（免费 OAuth）
-
-Qwen 提供 OAuth 设备码认证，可免费使用 Qwen Coder + Vision 模型：
+配置示例：
 
 ```bash
-# 启用插件并登录
-openclaw plugins enable qwen-portal-auth
-openclaw models auth login --provider qwen-portal --set-default
+# 允许所有群聊
+openclaw config set channels.feishu.groupPolicy "open"
+
+# 设置某个群不需要@就回复
+openclaw config set channels.feishu.groups.<群ID>.requireMention false
 ```
 
-可用模型：`qwen-portal/coder-model`、`qwen-portal/vision-model`
-
-#### BytePlus（国际版火山引擎）
-
-面向国际用户，与火山引擎共享模型目录：
-
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "byteplus/seed-1-8-251228" } },
-  }
-}
-```
-
-CLI：`openclaw onboard --auth-choice byteplus-api-key`
-
-<details>
-<summary>更多国产提供商</summary>
-
-OpenClaw 还支持以下国产提供商（配置方式类似，通过 `models.providers` 添加）：
-
-- **硅基流动 SiliconFlow**：`https://api.siliconflow.cn/v1`（OpenAI 兼容）
-- **深度求索 DeepSeek**：`https://api.deepseek.com/v1`（OpenAI 兼容）
-- **阶跃星辰 StepFun**：OpenAI 兼容
-- **稀宇科技 MiniMax**：`openclaw onboard --auth-choice minimax-api`
-- **智谱 Z.AI**：内置提供商，`ZAI_API_KEY`
-- **混元（腾讯）**：OpenAI 兼容
-- **文心一言（百度）**：OpenAI 兼容
-
-配置模式参考[第二章备选方案：硅基流动](/cn/adopt/chapter2/#_2-配置-ai-模型)的格式，将 `baseUrl` 和 `apiKey` 替换为对应提供商即可。
-
-</details>
-
-### 5.3 本地模型
-
-#### Ollama
-
-Ollama 是最流行的本地模型运行时，OpenClaw 自动检测本地运行的 Ollama：
-
-```bash
-# 安装 Ollama 并拉取模型
-ollama pull llama3.3
-```
-
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "ollama/llama3.3" } }
-  }
-}
-```
-
-> Ollama 在本地 `http://127.0.0.1:11434/v1` 运行时会被自动发现，无需额外配置。
-
-#### vLLM
-
-vLLM 是高性能的本地推理服务器：
-
-```bash
-# 设置环境变量启用自动发现
-export VLLM_API_KEY="vllm-local"
-```
-
-```json5
-{
-  agents: {
-    defaults: { model: { primary: "vllm/your-model-id" } }
-  }
-}
-```
-
-默认连接 `http://127.0.0.1:8000/v1`。
-
-### 5.4 自定义提供商（通用方式）
-
-任何 OpenAI 或 Anthropic 兼容的 API 都可以通过 `models.providers` 接入：
-
-```json5
-{
-  agents: {
-    defaults: {
-      model: { primary: "lmstudio/minimax-m2.5-gs32" },
-      models: { "lmstudio/minimax-m2.5-gs32": { alias: "Minimax" } },
-    }
-  },
-  models: {
-    providers: {
-      lmstudio: {
-        baseUrl: "http://localhost:1234/v1",
-        apiKey: "LMSTUDIO_KEY",
-        api: "openai-completions",
-        models: [{
-          id: "minimax-m2.5-gs32",
-          name: "MiniMax M2.5",
-          contextWindow: 200000,
-          maxTokens: 8192,
-        }]
-      }
-    }
-  }
-}
-```
-
-<details>
-<summary>自定义提供商的可选字段</summary>
-
-在 `models` 数组中，每个模型对象支持以下字段（均可省略）：
-
-| 字段 | 默认值 | 说明 |
-|------|--------|------|
-| `reasoning` | `false` | 是否支持推理/思考链 |
-| `input` | `["text"]` | 支持的输入类型 |
-| `cost` | 全为 0 | `{ input, output, cacheRead, cacheWrite }` |
-| `contextWindow` | `200000` | 上下文窗口大小 |
-| `maxTokens` | `8192` | 最大输出 Token 数 |
-
-建议设置与你的代理/模型实际限制匹配的值。
-
-**API 兼容模式**（`api` 字段）：
-- `openai-completions`：OpenAI Chat Completions 兼容
-- `anthropic-messages`：Anthropic Messages 兼容
+群聊中每个群拥有独立的会话——群里的对话不会影响你和机器人的私聊记录。
 
 </details>
 
 <details>
-<summary>models.json 注册表机制</summary>
+<summary>私聊访问策略（dmPolicy）</summary>
 
-自定义提供商配置会写入 `~/.openclaw/agents/<agentId>/models.json`。默认使用 `merge` 模式（与内置目录合并），也可设置 `models.mode: "replace"` 完全替换。
+`dmPolicy` 控制谁能通过私聊使用你的机器人：
 
-合并优先级规则：
-- 已有的非空 `baseUrl` 优先
-- 非 SecretRef 管理的 `apiKey` 优先
-- SecretRef 管理的 Key 会从源标记（环境变量名等）刷新，不直接存储明文
-- 其他字段从配置和标准目录刷新
-
-</details>
-
----
-
-## 6. API Key 轮换
-
-当你有**多个 API Key** 时，OpenClaw 支持自动轮换，遇到限流（429）时自动切换到下一个 Key：
-
-### 配置方式
-
-通过环境变量配置（以 OpenAI 为例）：
-
-```bash
-# 方式一：逗号分隔列表
-OPENAI_API_KEYS="sk-key1,sk-key2,sk-key3"
-
-# 方式二：编号列表
-OPENAI_API_KEY_1="sk-key1"
-OPENAI_API_KEY_2="sk-key2"
-
-# 方式三：单个实时覆盖（最高优先级）
-OPENCLAW_LIVE_OPENAI_KEY="sk-hot-key"
-```
-
-### 优先级
-
-```
-OPENCLAW_LIVE_<PROVIDER>_KEY  ← 最高（单个覆盖）
-<PROVIDER>_API_KEYS            ← 逗号列表
-<PROVIDER>_API_KEY             ← 主 Key
-<PROVIDER>_API_KEY_*           ← 编号列表
-```
-
-### 轮换规则
-
-- **只在限流错误**（429、rate_limit、quota、resource exhausted）时轮换
-- 非限流错误直接失败，不尝试下一个 Key
-- 所有 Key 都失败时，返回最后一个 Key 的错误
-- Google 提供商额外支持 `GOOGLE_API_KEY` 作为兜底
-
----
-
-## 7. 模型故障转移（Failover）
-
-这是 OpenClaw 最强大的可靠性功能之一——当模型或提供商出故障时，自动切换到备用方案，用户完全无感。
-
-### 两阶段故障转移
-
-```
-阶段一：认证配置轮换
-  同一提供商内的多个 API Key / OAuth 配置之间轮换
-  ↓ 所有配置都失败
-阶段二：模型备用
-  切换到 agents.defaults.model.fallbacks 中的下一个模型
-```
-
-### 配置示例
-
-```json5
-{
-  agents: {
-    defaults: {
-      model: {
-        primary: "anthropic/claude-opus-4-6",
-        fallbacks: [
-          "openai/gpt-5.1-codex",
-          "google/gemini-3-pro-preview"
-        ]
-      }
-    }
-  }
-}
-```
-
-当 Anthropic 的所有认证配置都失败后，自动切换到 OpenAI；OpenAI 也失败则切换到 Google。
-
-### 认证配置（Auth Profiles）
-
-OpenClaw 使用**认证配置**管理 API Key 和 OAuth Token：
-
-- 存储位置：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
-- 支持两种类型：`api_key`（API 密钥）和 `oauth`（OAuth Token）
-
-<details>
-<summary>认证配置轮换规则</summary>
-
-**选择顺序**：
-1. 显式配置：`auth.order[provider]`（如果设置了）
-2. 配置中的 profiles：`auth.profiles` 按提供商筛选
-3. 存储的 profiles：`auth-profiles.json` 中的条目
-
-**默认轮换策略**（无显式配置时）：
-- 优先使用 OAuth（在 API Key 之前）
-- 同类型中，最久未使用的优先
-- 冷却中/禁用的配置排到最后
-
-**Profile ID 命名规则**：
-- 默认：`provider:default`
-- OAuth 带邮箱：`provider:email@example.com`
+| 策略 | 行为 |
+|------|------|
+| `"pairing"` | 默认。新用户需配对码批准 |
+| `"allowlist"` | 仅允许 `allowFrom` 列表中的用户 |
+| `"open"` | 允许所有人（需在 `allowFrom` 中设置 `"*"`） |
+| `"disabled"` | 禁用私聊 |
 
 </details>
 
-<details>
-<summary>会话粘性（Session Stickiness）</summary>
+## 6. 常见问题
 
-为了保持提供商缓存命中率，OpenClaw 会在同一会话内**固定**使用选中的认证配置，不会每次请求都轮换。固定配置在以下情况失效：
+**Q: 事件订阅保存失败？**
 
-- 会话重置（`/new` 或 `/reset`）
-- 压缩完成（compaction）
-- 当前配置进入冷却/禁用状态
+A: 请确保已先运行 `openclaw channels add` 添加飞书渠道，且网关处于运行状态（`openclaw gateway status` 显示正常）。长连接模式要求网关在线才能注册。
 
-**手动锁定**：在聊天中用 `/model …@<profileId>` 锁定特定配置。锁定后如果该配置失败，OpenClaw 会直接跳到下一个模型（fallback），而不是切换同提供商的其他配置。
+**Q: 机器人没有回复？**
 
-**常见困惑**：如果你同时配置了 OAuth 和 API Key，轮换可能在两者之间切换，导致行为看起来不一致。解决方法：
-- 用 `auth.order[provider]` 固定顺序
-- 或用 `/model …@profileId` 锁定单个配置
+A: 逐步排查：
+1. 网关是否运行：`openclaw status`
+2. 飞书渠道是否已添加：检查 `openclaw.json` 中的 `channels.feishu` 配置
+3. 是否已完成配对：`openclaw pairing list feishu`
+4. 查看实时日志定位错误：`openclaw logs --follow`
+5. 重启网关重试：`openclaw gateway restart`
 
-</details>
+**Q: 权限审核不通过？**
 
-### 冷却机制（Cooldown）
+A: 联系飞书企业管理员审批。个人用户创建的应用通常会自动通过，无需额外审批。
 
-当认证配置因错误失败时，OpenClaw 会将其标记为"冷却中"并自动切换到下一个。冷却时间使用**指数退避**：
+**Q: 配置修改后不生效？**
 
-| 失败次数 | 冷却时间 |
-|---------|---------|
-| 第 1 次 | 1 分钟 |
-| 第 2 次 | 5 分钟 |
-| 第 3 次 | 25 分钟 |
-| 第 4 次+ | 1 小时（上限） |
+A: 修改配置后必须重启网关：`openclaw gateway restart`。更多配置项说明见[附录 G：配置文件详解](/cn/appendix/appendix-g)。
 
-触发冷却的错误类型：认证错误、限流（429）、超时、格式错误（如工具调用 ID 验证失败）、OpenAI 兼容的 stop-reason 错误。
+**Q: 群聊中 @了机器人但没反应？**
 
-<details>
-<summary>计费禁用（Billing Disables）</summary>
-
-余额不足（如 "insufficient credits"、"credit balance too low"）触发的不是短冷却，而是**长期禁用**：
-
-- 起始退避：5 小时
-- 每次失败翻倍，上限 24 小时
-- 24 小时无失败后自动重置计数器
-
-状态存储在 `auth-profiles.json`：
-
-```json5
-{
-  "usageStats": {
-    "provider:profile": {
-      "disabledUntil": 1736178000000,
-      "disabledReason": "billing"
-    }
-  }
-}
-```
-
-> **实用建议**：对于 24/7 运行的 Gateway，API Key 认证通常比 OAuth 更稳定可预测。如果使用 OpenRouter，建议开启 Auto Top Up 避免余额用尽导致长时间禁用。
-
-</details>
-
----
-
-## 8. 常见问题
-
-**Q: 切换模型后没有回复？**
-
-A: 可能触发了模型白名单限制。如果设置了 `agents.defaults.models`，只有白名单中的模型才能使用。解决方法：
-1. 将模型添加到白名单
-2. 删除 `agents.defaults.models` 取消白名单
-3. 用 `/model list` 查看可用模型
-
-**Q: 模型标识中的 `/` 怎么处理？**
-
-A: OpenClaw 以第一个 `/` 分隔提供商和模型名。如果模型名本身包含 `/`（如 OpenRouter 上的 `moonshotai/kimi-k2`），必须加上提供商前缀：`openrouter/moonshotai/kimi-k2`。省略提供商前缀时，OpenClaw 会当作别名或默认提供商的模型处理。
-
-**Q: 如何确认当前用的是哪个模型？**
-
-A: 运行 `openclaw models status` 或在聊天中发送 `/model status`，会显示当前主模型、备用模型、认证状态的完整信息。
-
-**Q: 本地模型（Ollama）和云端模型可以混用吗？**
-
-A: 可以。常见做法是将本地模型作为 fallback——云端模型挂了或限流时自动切换到本地：
-
-```json5
-{
-  agents: {
-    defaults: {
-      model: {
-        primary: "anthropic/claude-opus-4-6",
-        fallbacks: ["ollama/llama3.3"]
-      }
-    }
-  }
-}
-```
-
-**Q: 多个 API Key 怎么配置最省钱？**
-
-A: 利用 Key 轮换分散限流压力，再配合 fallback 实现成本梯度：
-
-```json5
-{
-  agents: {
-    defaults: {
-      model: {
-        primary: "anthropic/claude-sonnet-4-5",      // 日常用便宜的
-        fallbacks: ["anthropic/claude-opus-4-6"]      // 需要时用强的
-      }
-    }
-  }
-}
-```
-
-环境变量中配置多个 Key：`ANTHROPIC_API_KEYS="sk-key1,sk-key2"`
+A: 检查 `groupPolicy` 是否为 `"disabled"`；如果是 `"allowlist"`，确认该群的 ID 已加入白名单。
 
 ---
 
 **下一步**：
-- 配置 Agent 系统（工作区、会话、多 Agent 路由）→ [第五章 Agents 配置](/cn/adopt/chapter5/)
-- 查看完整配置参考 → [附录 G 配置文件详解](/cn/appendix/appendix-g)
+- 配置模型提供商与多模型切换 → [第五章 模型管理](/cn/adopt/chapter5/)
+- 查看渠道相关命令 → [附录 F 命令速查表](/cn/appendix/appendix-f)

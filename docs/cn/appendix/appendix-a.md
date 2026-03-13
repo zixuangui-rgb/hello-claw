@@ -126,7 +126,7 @@
 | Ollama 集成 | <https://www.toutiao.com/group/7602483142699516435> | 国产算力适配与工具链生态 |
 | MiniMax + 飞书 | <https://www.toutiao.com/group/7612259016139391503> | 国产模型本地 Agent 部署方案 |
 
-> 详见[第四章 Models 配置](/cn/adopt/chapter4/)。
+> 详见[第五章 模型管理](/cn/adopt/chapter5/)。
 
 ---
 
@@ -141,7 +141,7 @@
 | 微信 / Telegram / Discord | <https://www.toutiao.com/group/7610316711539950132> | 多平台消息通道配置 |
 | Slack / Signal / iMessage | <https://www.toutiao.com/group/7614458834022613544> | 企业 IM 集成方案 |
 
-> 详见[第三章 Chat Provider 配置](/cn/adopt/chapter3/)。
+> 详见[第四章 Chat Provider 配置](/cn/adopt/chapter4/)。
 
 ---
 
@@ -237,7 +237,7 @@
 | ⭐ AWS 安全与功能增强实践 | <https://aws.amazon.com/cn/blogs/china/openclaw-security-and-feature-enhancement-practices/> | EC2 部署后的安全防护与功能增强工程实践（踩坑记录） |
 | 安全加固指南 | <https://github.com/rohitg00/awesome-openclaw> | 权限管理与风险防控 |
 
-> 详见[第九章 安全防护与威胁模型](/cn/adopt/chapter9/)。
+> 详见[第十章 安全防护与威胁模型](/cn/adopt/chapter10/)。
 
 ### 6.6 历史版本与演进
 
@@ -267,7 +267,7 @@
 | MobileClaw | <https://github.com/mobileclaw/mobileclaw> | 移动优先 PWA 客户端 |
 | PinchChat | <https://github.com/pinchchat/pinchchat> | 开源 WebChat UI，ChatGPT 风格界面 |
 
-> 详见[第十章 Web 界面与客户端](/cn/adopt/chapter10/)。
+> 详见[第十一章 Web 界面与客户端](/cn/adopt/chapter11/)。
 
 ### 7.3 可观测性与监控
 
@@ -304,7 +304,7 @@
   ↓
 第三步：在 AutoClaw 中完成第一次对话
   ↓
-第四步：按第三章接入一个聊天平台（推荐飞书）
+第四步：按第四章接入一个聊天平台（推荐飞书）
   ↓
 第五步：探索 ClawHub 安装感兴趣的技能
 ```
@@ -316,7 +316,7 @@
   ↓
 第二步：使用 OpenClaw 汉化发行版 或 HuggingClaw 快速跑起来
   ↓
-第三步：按第四章配置国内模型提供商
+第三步：按第五章配置国内模型提供商
   ↓
 第四步：按需阅读场景章节（第三 ~ 十一章）
 ```
@@ -336,13 +336,13 @@
 ### 路径四：企业部署（生产环境）
 
 ```
-第一步：阅读第九章安全防护与威胁模型
+第一步：阅读第十章安全防护与威胁模型
   ↓
 第二步：参考附录 F 选择云服务部署方案
   ↓
-第三步：按第七章配置 Gateway 运维与管理
+第三步：按第八章配置 Gateway 运维与管理
   ↓
-第四步：按第八章设置远程访问与网络
+第四步：按第九章设置远程访问与网络
   ↓
 第五步：部署可观测性工具（Manifest / Opik）
 ```

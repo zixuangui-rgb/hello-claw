@@ -345,4 +345,4 @@ rm -rf ~/.openclaw           # 删除配置和状态数据
 ---
 
 **下一步**：
-- 接入 QQ、飞书或 Telegram → [第三章 Chat Provider 配置](/cn/adopt/chapter3/)
+- 接入 QQ、飞书或 Telegram → [第四章 Chat Provider 配置](/cn/adopt/chapter4/)

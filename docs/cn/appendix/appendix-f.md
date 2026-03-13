@@ -115,7 +115,7 @@ openclaw configure                   # 重新打开交互式配置向导
 openclaw dashboard                   # 启动 Web Dashboard（浏览器自动打开）
 ```
 
-> 详见[第 11 章 Onboarding 配置向导](/cn/adopt/chapter11/)。
+> 详见[第 3 章 配置向导](/cn/adopt/chapter3/)。
 
 ---
 
@@ -163,7 +163,7 @@ openclaw health --verbose            # 详细信息
 openclaw gateway call <method> --params '<json>'  # 🔧 直接调用网关 RPC 方法
 ```
 
-> 详见[第 7 章 Gateway 运维与管理](/cn/adopt/chapter7/)。
+> 详见[第 8 章 Gateway 运维与管理](/cn/adopt/chapter8/)。
 
 ---
 
@@ -227,7 +227,7 @@ openclaw pairing approve <channel> <code>           # 批准配对
 openclaw pairing approve --channel <channel> <code> --notify  # 批准并通知对方
 ```
 
-> 详见[第 3 章 Chat Provider 配置](/cn/adopt/chapter3/)。
+> 详见[第 4 章 Chat Provider 配置](/cn/adopt/chapter4/)。
 
 ---
 
@@ -372,7 +372,7 @@ openclaw models auth paste-token     # 🔧 粘贴 Token
 openclaw models auth order get|set|clear  # 🔧 管理提供商优先级
 ```
 
-> 模型配置详见[第 4 章 Models 配置](/cn/adopt/chapter4/)，提供商对比见[附录 E 模型提供商选型指南](/cn/appendix/appendix-e)。
+> 模型配置详见[第 5 章 模型管理](/cn/adopt/chapter5/)，提供商对比见[附录 E 模型提供商选型指南](/cn/appendix/appendix-e)。
 
 ---
 
@@ -522,7 +522,7 @@ openclaw secrets configure           # 配置密钥
 openclaw secrets apply --from <plan.json>  # 从计划文件批量应用
 ```
 
-> 安全相关详见[第 9 章 安全防护与威胁模型](/cn/adopt/chapter9/)。
+> 安全相关详见[第 10 章 安全防护与威胁模型](/cn/adopt/chapter10/)。
 
 ---
 

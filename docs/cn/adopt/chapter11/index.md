@@ -1,469 +1,401 @@
-# 第十一章 Onboarding 配置向导
+# 第十一章 Web 界面与客户端
 
-> 本章详解 OpenClaw 的首次配置体验——从「装好了，然后呢？」到「龙虾已就绪」的完整流程。
+> 本章介绍 OpenClaw 的各种交互界面：Web 控制面板（Dashboard）、内置 WebChat 聊天、macOS Control UI 桌面客户端、终端 TUI，以及第三方 Web 客户端。读完本章，你将掌握所有与龙虾"面对面"交流的方式。
 
-> **前置条件**：已完成[第二章 OpenClaw 手动安装](/cn/adopt/chapter2/)，OpenClaw CLI 已安装。
+> **前置条件**：已完成[第二章 OpenClaw 手动安装](/cn/adopt/chapter2/)，Gateway 已安装并正常运行。
 
-## 0. 全景：两条 Onboarding 路径
+## 0. 全景：你能用什么和龙虾交流？
 
-安装完 OpenClaw 后，你需要通过 **Onboarding（配置向导）** 告诉龙虾三件事：用谁的大脑（模型）、怎么联系你（渠道）、在哪里工作（工作区）。OpenClaw 提供两条路径：
+OpenClaw 提供**四种原生界面**，外加社区第三方客户端：
 
 ```
-┌─────────────────────────────────────────────────────┐
-│              OpenClaw Onboarding 路径                │
-├─────────────────────────┬───────────────────────────┤
-│    CLI 配置向导          │     macOS 应用引导         │
-│    (所有平台)            │     (仅 macOS)            │
-│                         │                           │
-│  openclaw onboard       │  OpenClaw.app 首次启动     │
-│  终端交互式问答          │  图形化分步引导            │
-│  完全控制每个细节        │  自动申请系统权限          │
-│  支持脚本化/非交互       │  内置 Onboarding 对话      │
-└────────────┬────────────┴─────────────┬─────────────┘
-             │                          │
-             └──────────┬───────────────┘
-                        ▼
-              Gateway 启动 ✅ 龙虾就绪
+┌───────────────────────────────────────────────────────┐
+│                   与龙虾交流的方式                      │
+├──────────────┬──────────────┬────────────┬─────────────┤
+│  Dashboard   │   WebChat    │ Control UI │     TUI     │
+│  (浏览器)     │  (浏览器)    │  (macOS)   │   (终端)    │
+│              │              │            │             │
+│ 管理+配置+   │  纯聊天      │ 原生桌面    │ 命令行聊天  │
+│ 对话历史     │  零配置      │ 全功能      │ 最轻量      │
+└──────┬───────┴──────┬───────┴─────┬──────┴──────┬──────┘
+       │              │             │             │
+       └──────────────┴──────┬──────┴─────────────┘
+                             │
+                     Gateway (ws://127.0.0.1:18789)
 ```
 
-| 路径 | 适用场景 | 平台 |
-|------|---------|------|
-| **CLI 配置向导** | 需要完全控制、远程服务器、自动化脚本 | macOS / Linux / Windows (WSL2) |
-| **macOS 应用引导** | 希望图形化引导、需要语音/摄像头等原生权限 | 仅 macOS |
+| 界面 | 访问方式 | 适用场景 | 平台 |
+|------|---------|---------|------|
+| **Dashboard** | `openclaw dashboard` → 浏览器 | 日常管理、配置编辑、对话查看 | 全平台 |
+| **WebChat** | 浏览器直接访问 Gateway 地址 | 快速对话、不装任何客户端 | 全平台 |
+| **Control UI** | OpenClaw.app 桌面应用 | macOS 用户的全功能原生体验 | macOS |
+| **TUI** | `openclaw chat` 终端命令 | SSH 远程、无 GUI 环境、脚本集成 | 全平台 |
 
-> **已经在第二章跑过 `openclaw onboard` 了？** 那你已经完成了基本配置！本章帮你理解向导的每一步做了什么，以及如何利用高级选项微调配置。
+> **一句话选择**：想管理配置 → Dashboard；想聊天 → WebChat 或 TUI；macOS 用户想要原生体验 → Control UI。
 
----
+## 1. Web Dashboard（控制面板）
 
-## 1. CLI 配置向导（所有平台）
+Dashboard 是 OpenClaw 的**主力管理界面**——一个运行在浏览器中的控制面板，涵盖配置管理、对话历史、渠道状态、技能管理等功能。
 
-CLI 向导是最通用的 Onboarding 方式，适用于 macOS、Linux 和 Windows（WSL2）。
+### 启动 Dashboard
 
-### 1.1 启动向导
-
-```bash
-openclaw onboard
-```
-
-> **想同时安装后台服务？** 加 `--install-daemon` 一步到位：
-> ```bash
-> openclaw onboard --install-daemon
-> ```
-
-### 1.2 QuickStart vs Advanced
-
-向导启动后会问你第一个问题：**QuickStart（快速开始）** 还是 **Advanced（高级模式）**？
-
-| 选项 | 自动配置内容 | 适合谁 |
-|------|------------|--------|
-| **QuickStart** | 本地 Gateway + 默认工作区 + 端口 18789 + Token 认证 + coding 工具策略 | 第一次用，想尽快聊天 |
-| **Advanced** | 所有选项都可自定义 | 需要远程部署、Tailscale、特殊安全策略 |
-
-<details>
-<summary>QuickStart 默认配置一览</summary>
-
-QuickStart 模式自动应用以下默认值：
-
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| Gateway 位置 | 本机（loopback） | 仅本机可访问 |
-| 工作区 | `~/.openclaw/workspace/` | 或使用已有工作区 |
-| Gateway 端口 | 18789 | 标准端口 |
-| 认证方式 | Token（自动生成） | 即使本地也需认证 |
-| 工具策略 | `tools.profile: "coding"` | 保留文件系统和运行时工具 |
-| DM 隔离 | `session.dmScope: "per-channel-peer"` | 每个渠道独立会话 |
-| Tailscale | 关闭 | 不暴露到 Tailnet |
-| Telegram/WhatsApp DM | 白名单模式 | 会提示输入你的手机号 |
-
-> 已有自定义 `tools.profile` 的用户不会被覆盖——向导尊重现有配置。
-
-</details>
-
-### 1.3 向导配置的六个步骤
-
-无论选择哪种模式，向导都会依次走过这些步骤：
-
-#### 步骤一：模型与认证
-
-选择模型提供商和认证方式。支持的认证方式：
-
-- **API Key**：直接粘贴密钥（最常用）
-- **OAuth**：浏览器授权（部分提供商支持）
-- **Setup Token**：一次性令牌
-
-> 不确定选哪个？详见[第四章 Models 配置](/cn/adopt/chapter4/)了解各提供商的接入方式。
-
-<details>
-<summary>安全提示：模型选择与工具安全</summary>
-
-如果你的龙虾会运行工具（执行命令、调用 API）或处理来自 Webhook/Hooks 的外部内容，请注意：
-
-- **优先选择最新一代的强模型**——较弱/较旧的模型更容易被提示词注入攻击
-- **保持严格的工具策略**——避免使用 `tools.profile: "full"`（不限制模式），除非你完全信任所有输入来源
-- 详见[第九章 安全防护](/cn/adopt/chapter9/)
-
-</details>
-
-<details>
-<summary>密钥存储：明文 vs SecretRef</summary>
-
-向导默认将 API Key 以明文存储在配置文件中。如果你需要更安全的存储方式：
-
-**交互模式**：选择 Secret Reference 模式，可以指向环境变量或 Provider Ref（文件/可执行程序），向导会立即验证引用是否有效。
-
-**非交互模式**：使用 `--secret-input-mode ref`，此时提供商的环境变量必须已设置：
-```bash
-export OPENAI_API_KEY="sk-..."
-openclaw onboard --secret-input-mode ref --non-interactive
-```
-
-</details>
-
-#### 步骤二：工作区
-
-配置龙虾的工作目录，存放 IDENTITY.md、MEMORY.md 等工作区文件。
-
-- 默认路径：`~/.openclaw/workspace/`
-- 如果路径下已有工作区文件，向导会复用而非覆盖
-
-#### 步骤三：Gateway 配置
-
-设置 Gateway 的运行参数：
-
-- **端口**：默认 18789
-- **绑定地址**：默认 127.0.0.1（仅本机）
-- **认证模式**：Token 或密码
-- **Tailscale 暴露**：是否通过 Tailnet 访问
-
-<details>
-<summary>Gateway Token 与 SecretRef</summary>
-
-在交互式 Token 模式下，你可以选择：
-- **明文 Token**（默认）：存储在配置文件中
-- **SecretRef**：通过环境变量或外部程序管理 Token
-
-非交互模式下使用 SecretRef：
-```bash
-openclaw onboard --gateway-token-ref-env GATEWAY_TOKEN --non-interactive
-```
-
-注意：如果同时配置了 `gateway.auth.token` 和 `gateway.auth.password` 但未设置 `gateway.auth.mode`，后台服务安装会被阻止，直到你明确选择一种模式。
-
-</details>
-
-#### 步骤四：渠道接入
-
-选择要连接的聊天平台：
-
-- WhatsApp、Telegram、Discord、Google Chat
-- Mattermost、Signal、BlueBubbles、iMessage
-
-> 可以跳过，后续用 `openclaw channels add` 随时添加。各渠道详细配置见[第三章 Chat Provider](/cn/adopt/chapter3/)。
-
-#### 步骤五：后台服务
-
-安装 Gateway 后台服务，确保重启后自动运行：
-
-- **macOS**：LaunchAgent（`ai.openclaw.gateway`）
-- **Linux / WSL2**：systemd 用户服务（`openclaw-gateway.service`）
-
-<details>
-<summary>后台服务与 SecretRef 的注意事项</summary>
-
-- 如果 Token 认证使用 SecretRef，后台服务安装时会验证引用有效性，但**不会**将解析后的 Token 持久化到服务环境中
-- 如果配置的 SecretRef 无法解析，后台服务安装会被阻止，并给出修复建议
-- 使用 `openclaw doctor` 可以自动检测和修复服务问题
-
-</details>
-
-#### 步骤六：健康检查与技能安装
-
-向导的最后阶段：
-
-1. **启动 Gateway** 并验证运行状态
-2. **安装推荐技能**和可选依赖
-
-> 想了解技能系统？详见[附录 D：技能开发与发布指南](/cn/appendix/appendix-d)。
-
-### 1.4 Web 搜索配置
-
-向导还包含一个 **Web 搜索** 配置步骤，让龙虾能使用 `web_search` 工具。支持的搜索提供商：
-
-| 提供商 | 说明 |
-|--------|------|
-| Perplexity | AI 搜索引擎 |
-| Brave | 隐私搜索 |
-| Gemini | Google AI 搜索 |
-| Grok | xAI 搜索 |
-| Kimi | 月之暗面搜索 |
-
-粘贴对应的 API Key 即可启用。也可以后续配置：
-
-```bash
-openclaw configure --section web
-```
-
----
-
-## 2. macOS 应用引导
-
-如果你使用 macOS 上的 OpenClaw.app（Control UI），首次启动会进入图形化引导流程。
-
-### 2.1 引导步骤总览
-
-| 步骤 | 内容 | 操作 |
-|------|------|------|
-| ① | macOS 安全警告 | 点击「允许」 |
-| ② | 本地网络发现 | 允许查找本地网络设备 |
-| ③ | 安全须知 | 阅读信任模型说明 |
-| ④ | 选择 Gateway 位置 | 本机 / 远程 / 稍后配置 |
-| ⑤ | 系统权限申请 | 逐项授权 |
-| ⑥ | 安装 CLI（可选） | 安装 `openclaw` 命令行工具 |
-| ⑦ | Onboarding 对话 | 龙虾自我介绍 + 引导下一步 |
-
-### 2.2 安全须知（步骤 ③）
-
-应用会显示 OpenClaw 的信任模型说明：
-
-- **默认定位**：个人助手——一个可信操作者边界
-- **多用户场景**：需要拆分信任边界、最小化工具权限、参考[第九章 安全防护](/cn/adopt/chapter9/)
-- **本地新安装**默认使用 `tools.profile: "coding"`，保留文件系统和运行时工具
-
-### 2.3 Gateway 位置选择（步骤 ④）
-
-| 选项 | 说明 |
-|------|------|
-| **This Mac（本机）** | 在本机运行 Gateway，应用直接配置认证和凭证 |
-| **Remote（远程）** | 连接远程 Gateway（通过 SSH 或 Tailnet），不修改本机认证 |
-| **Configure later（稍后配置）** | 跳过设置，应用保持未配置状态 |
-
-<details>
-<summary>Gateway 认证提示</summary>
-
-- 向导现在即使对本地回环连接也会生成 Token，所以本地 WebSocket 客户端也需要认证
-- 如果禁用认证，任何本地进程都能连接——仅在完全可信的机器上这样做
-- 多机访问或非回环绑定时，请务必使用 Token 认证
-
-</details>
-
-### 2.4 系统权限（步骤 ⑤）
-
-macOS 应用会请求以下 TCC 权限：
-
-| 权限 | 用途 |
-|------|------|
-| **Automation（自动化）** | AppleScript 控制其他应用 |
-| **Notifications（通知）** | 推送消息提醒 |
-| **Accessibility（辅助功能）** | UI 交互控制 |
-| **Screen Recording（屏幕录制）** | 截屏/屏幕共享 |
-| **Microphone（麦克风）** | 语音输入 |
-| **Speech Recognition（语音识别）** | 语音转文字 |
-| **Camera（摄像头）** | 视觉输入 |
-| **Location（定位）** | 位置感知 |
-
-> 不需要的权限可以跳过，后续在 macOS「系统设置 → 隐私与安全性」中随时调整。
-
-### 2.5 CLI 安装（步骤 ⑥）
-
-应用可以通过 npm/pnpm 安装全局 `openclaw` CLI，这样终端命令和 LaunchAgent 定时任务都能正常工作。此步骤可选——如果你已经通过[第二章](/cn/adopt/chapter2/)安装了 CLI，可以跳过。
-
-### 2.6 Onboarding 对话（步骤 ⑦）
-
-完成设置后，应用会打开一个**专用的 Onboarding 对话会话**：
-
-- 龙虾会自我介绍并引导你探索功能
-- 这个对话与你的正常会话**分开**，不会干扰日常使用
-- Gateway 端首次运行时会执行 Bootstrapping（引导启动），初始化工作区文件
-
----
-
-## 3. 自定义模型提供商（Custom Provider）
-
-如果向导内置列表中没有你想用的提供商——比如自建的 API 网关、公司内部模型服务、或其他兼容 OpenAI/Anthropic 接口的服务——可以选择 **Custom Provider**。
-
-### 3.1 配置步骤
-
-在向导的模型选择环节，选择 **Custom Provider**，然后依次填写：
-
-| 步骤 | 内容 | 示例 |
-|------|------|------|
-| 1. 选择兼容类型 | OpenAI-compatible / Anthropic-compatible / Unknown（自动检测） | OpenAI-compatible |
-| 2. 输入 Base URL | 提供商的 API 地址 | `https://api.mycompany.com/v1` |
-| 3. 输入 API Key | 如果需要的话 | `sk-custom-...` |
-| 4. 填写 Model ID | 模型标识符 | `gpt-4o` |
-| 5. 设置别名（可选） | 方便记忆的短名称 | `company-gpt` |
-| 6. 设置 Endpoint ID | 区分多个自定义端点 | `mycompany` |
-
-<details>
-<summary>多个自定义端点共存</summary>
-
-每个 Custom Provider 通过 **Endpoint ID** 区分，所以你可以同时配置多个自定义端点：
-
-```json
-// openclaw.json 示例
-{
-  "models": {
-    "providers": {
-      "custom-company-a": {
-        "type": "openai",
-        "baseUrl": "https://api.company-a.com/v1",
-        "apiKey": "sk-a-..."
-      },
-      "custom-company-b": {
-        "type": "anthropic",
-        "baseUrl": "https://api.company-b.com/v1",
-        "apiKey": "sk-b-..."
-      }
-    }
-  }
-}
-```
-
-详见[附录 G：配置文件详解](/cn/appendix/appendix-g)。
-
-</details>
-
----
-
-## 4. 多智能体配置
-
-OpenClaw 支持在同一实例下运行**多个独立智能体**，每个智能体有自己的工作区、会话和认证配置。
-
-### 4.1 添加智能体
-
-```bash
-openclaw agents add <name>
-```
-
-不带 `--workspace` 参数时会启动交互式向导。
-
-### 4.2 智能体配置项
-
-| 配置项 | 说明 |
-|--------|------|
-| `agents.list[].name` | 智能体名称 |
-| `agents.list[].workspace` | 工作区路径（默认 `~/.openclaw/workspace-<agentId>`） |
-| `agents.list[].agentDir` | 智能体配置目录 |
-
-<details>
-<summary>非交互模式与消息路由</summary>
-
-**非交互模式标志**：
-```bash
-openclaw agents add worker-bot \
-  --model "openrouter/stepfun/step-3.5-flash:free" \
-  --agent-dir ~/.openclaw/agents/worker \
-  --bind "telegram:chat:12345" \
-  --non-interactive
-```
-
-**消息路由**：通过 `--bind` 参数将特定渠道/对话绑定到某个智能体。向导也会引导你完成绑定配置。
-
-这样你可以让不同的龙虾负责不同的聊天群或任务类型。
-
-</details>
-
----
-
-## 5. 重新配置与维护
-
-### 5.1 重新运行向导
-
-```bash
-openclaw configure
-```
-
-> **与 `openclaw onboard` 的区别**：`configure` 用于修改现有配置，`onboard` 用于首次设置。两者流程类似，但 `configure` 不会重新安装后台服务。
-
-### 5.2 重置配置
-
-```bash
-# 默认重置：配置、凭证、会话
-openclaw onboard --reset
-
-# 完整重置：包括工作区
-openclaw onboard --reset --reset-scope full
-```
-
-> ⚠️ `--reset` 会清除现有配置，请谨慎使用。如果只是想修改某项配置，用 `openclaw configure` 更安全。
-
-### 5.3 配置异常处理
-
-如果配置文件损坏或包含过时的字段，向导会提示你先运行诊断：
-
-```bash
-openclaw doctor
-```
-
-`doctor` 命令会自动检测并修复常见问题，包括服务注册、配置格式和凭证有效性。详见[第七章 Doctor 诊断](/cn/adopt/chapter7/)。
-
-<details>
-<summary>非交互模式（脚本化部署）</summary>
-
-在 CI/CD 或批量部署场景中，可以使用非交互模式跳过所有交互式提问：
-
-```bash
-openclaw onboard \
-  --non-interactive \
-  --auth-choice openai-api-key \
-  --install-daemon
-```
-
-注意事项：
-- `--json` 标志**不代表**非交互模式，它只是改变输出格式
-- 非交互模式下必须通过命令行参数或环境变量提供所有必要配置
-- 使用 `--secret-input-mode ref` 时，对应的环境变量必须已设置
-
-</details>
-
----
-
-## 6. 常见问题
-
-**Q1：向导配置的文件存在哪里？**
-
-主配置文件在 `~/.openclaw/openclaw.json`，工作区文件在 `~/.openclaw/workspace/`。详见[附录 G：配置文件详解](/cn/appendix/appendix-g)。
-
-**Q2：跑完向导后最快的方式开始聊天是什么？**
-
-直接在终端聊天：
-```bash
-openclaw chat
-```
-
-或打开浏览器 Dashboard（无需任何渠道配置）：
 ```bash
 openclaw dashboard
 ```
 
-详见[第十章 Web 界面与客户端](/cn/adopt/chapter10/)。
+浏览器会自动打开 `http://localhost:18789`。如果没有自动打开，手动在浏览器地址栏输入即可。
 
-**Q3：我用的模型提供商不在向导列表里怎么办？**
+![Web 控制面板浏览器界面](/openclaw-dashboard-browser.png)
 
-选择 **Custom Provider**，填入提供商的 API 地址和密钥即可。支持 OpenAI 兼容和 Anthropic 兼容两种接口格式。详见[本章第 3 节](#_3-自定义模型提供商-custom-provider)。
+> **什么是 localhost？** 就是"本机"的意思。这个网页只有你自己的电脑能打开，外部无法访问。
 
-**Q4：Remote 模式具体做了什么？**
+### Dashboard 能做什么
 
-Remote 模式仅配置本地客户端连接远程 Gateway 的方式（SSH 隧道或 Tailnet 地址），**不会在远程主机上安装或修改任何东西**。远程主机的 Gateway 需要提前配置好。详见[第八章 远程访问与网络](/cn/adopt/chapter8/)。
+| 功能区 | 说明 |
+|--------|------|
+| **Config** | 可视化编辑 `openclaw.json` 配置，实时生效 |
+| **Conversations** | 查看所有对话历史、消息详情、工具调用记录 |
+| **Channels** | 查看已连接的聊天渠道状态 |
+| **Sessions** | 管理活跃会话，查看会话上下文 |
+| **Skills** | 浏览和管理已安装的技能 |
+| **Cron** | 查看和管理定时任务 |
+| **Logs** | 实时查看 Gateway 日志流 |
 
-**Q5：重新运行向导会覆盖我的现有配置吗？**
+### 配置编辑
 
-不会。除非你显式选择 Reset 或传入 `--reset` 参数，向导会保留现有配置，只修改你选择更改的部分。
+Dashboard 的 Config 标签页提供了图形化的配置编辑器。修改后 Gateway 会自动应用（热重载），大多数配置不需要重启。
+
+> **提示**：Dashboard 编辑的就是 `~/.openclaw/openclaw.json` 文件。你也可以用命令行 `openclaw config set <key> <value>` 或直接编辑文件，效果完全一样（详见[第八章 配置管理](/cn/adopt/chapter8/#_2-配置管理)）。
+
+### 远程访问 Dashboard
+
+默认情况下 Dashboard 只能在本机访问。如果你的 Gateway 运行在远程服务器上，需要通过 SSH 隧道或 Tailscale 访问（详见[第九章 远程访问](/cn/adopt/chapter9/)）：
+
+```bash
+# SSH 隧道方式：在本地电脑执行
+ssh -N -L 18789:127.0.0.1:18789 user@远程服务器
+
+# 然后本地浏览器打开 http://localhost:18789
+```
+
+<details>
+<summary>Dashboard 认证</summary>
+
+如果 Gateway 配置了认证（`token` 或 `password` 模式），打开 Dashboard 时会要求输入凭证：
+
+- **Token 模式**：输入 `OPENCLAW_GATEWAY_TOKEN` 环境变量的值
+- **Password 模式**：输入 `OPENCLAW_GATEWAY_PASSWORD` 环境变量的值
+- **Tailscale 模式**：如果启用了 `allowTailscale: true`，从 Tailscale 网络内访问无需密码
+
+```json5
+// 认证配置示例
+{
+  gateway: {
+    auth: {
+      mode: "token",             // token | password
+      token: "${OPENCLAW_GATEWAY_TOKEN}",
+      allowTailscale: true,      // Tailscale 设备免认证
+    },
+  },
+}
+```
+
+> **安全提醒**：Dashboard 拥有完整的管理权限。务必设置认证，尤其是 Gateway 不在 loopback 上运行时（详见[第十章 安全防护](/cn/adopt/chapter10/)）。
+
+</details>
+
+<details>
+<summary>更改 Dashboard 端口</summary>
+
+如果默认端口 `18789` 与其他服务冲突：
+
+```json5
+{
+  gateway: {
+    port: 19000,   // 改为其他端口
+  },
+}
+```
+
+或启动时指定：
+
+```bash
+openclaw gateway --port 19000
+```
+
+改完后 Dashboard 地址变为 `http://localhost:19000`。
+
+</details>
+
+## 2. WebChat（内置 Web 聊天）
+
+WebChat 是 Gateway **内置的 Web 聊天界面**，和 Telegram、Discord 一样是一个"渠道"——只不过它直接运行在浏览器中，不需要任何第三方平台。
+
+### 打开 WebChat
+
+Gateway 启动后，直接在浏览器访问：
+
+```
+http://localhost:18789
+```
+
+Dashboard 界面中通常有一个 **Chat** 入口，点击即可进入 WebChat 界面。
+
+### WebChat 的特点
+
+- **零配置**：Gateway 启动就能用，不需要注册任何平台账号
+- **WebSocket 通信**：实时消息推送，体验流畅
+- **内置渠道**：在 OpenClaw 内部它和 Telegram、Discord 处于同等地位
+- **测试利器**：配置新技能或调试时，用 WebChat 测试最方便
+
+### 典型使用场景
+
+| 场景 | 说明 |
+|------|------|
+| **首次安装测试** | 装好 OpenClaw 后，先用 WebChat 确认龙虾能正常回复 |
+| **技能调试** | 安装新技能后，在 WebChat 中快速测试效果 |
+| **本地开发** | 开发自定义技能时，WebChat 是最快的反馈循环 |
+| **无 IM 场景** | 不想接入任何聊天平台，只在浏览器中使用 |
+
+### 健康检查快捷方式
+
+在 WebChat 中发送 `/status` 作为独立消息，可以获取 Gateway 状态回复，不会触发 Agent 处理。
+
+<details>
+<summary>WebChat 与其他渠道的对比</summary>
+
+| 对比维度 | WebChat | Telegram | Discord |
+|---------|---------|----------|---------|
+| 注册要求 | 无 | 需创建 Bot | 需创建 Bot |
+| 公网要求 | 不需要 | Webhook 需要 | 不需要 |
+| 移动端 | 浏览器访问 | 原生 App | 原生 App |
+| 群聊 | 不支持 | 支持 | 支持 |
+| 消息推送 | 需保持页面打开 | 系统通知 | 系统通知 |
+| 适合场景 | 本地测试、开发调试 | 日常使用、多人协作 | 社区互动 |
+
+WebChat 最适合**本地开发和测试**。如果你需要移动端推送通知或群聊功能，建议搭配 Telegram 或 Discord（详见[第四章 Chat Provider 配置](/cn/adopt/chapter4/)）。
+
+</details>
+
+<details>
+<summary>第三方 Web 聊天客户端</summary>
+
+社区还有一些第三方 Web 聊天界面，它们通过 Gateway 的 HTTP API 端点与 OpenClaw 通信：
+
+- **PinchChat**（[github.com/pinchchat/pinchchat](https://github.com/pinchchat/pinchchat)）：开源 WebChat UI，提供类似 ChatGPT 的对话界面
+
+使用第三方客户端前，需要在 Gateway 中启用 HTTP API 端点：
+
+```json5
+{
+  gateway: {
+    http: {
+      endpoints: {
+        chatCompletions: { enabled: true },
+      },
+    },
+  },
+}
+```
+
+然后将第三方客户端的 API 地址指向 `http://127.0.0.1:18789/v1/chat/completions`，使用 Gateway 认证 token 作为 API Key（详见[第八章 HTTP API 端点](/cn/adopt/chapter8/#_8-http-api-端点)）。
+
+</details>
+
+## 3. Control UI（macOS 桌面客户端）
+
+Control UI 是 OpenClaw 的 **macOS 原生桌面应用**（OpenClaw.app），提供系统级的集成体验。
+
+### 安装
+
+如果你通过 [AutoClaw](/cn/adopt/chapter1/) 或 Homebrew 安装了 OpenClaw，Control UI 可能已经包含在内。也可以单独下载：
+
+```bash
+brew install --cask openclaw
+```
+
+安装后在「应用程序」中找到 **OpenClaw.app**，双击打开。
+
+### Control UI 能做什么
+
+| 功能 | 说明 |
+|------|------|
+| **菜单栏常驻** | 系统托盘图标，随时唤起 |
+| **Gateway 管理** | 启动/停止/重启 Gateway，无需终端 |
+| **配置编辑** | 图形化编辑 `openclaw.json` |
+| **对话查看** | 浏览历史对话和工具调用 |
+| **远程连接** | 内置 SSH 隧道管理（Settings → General → "OpenClaw runs"） |
+| **通知推送** | macOS 原生通知，龙虾回复时弹窗提醒 |
+
+### 远程模式
+
+Control UI 支持直接连接远程 Gateway：
+
+1. 打开 OpenClaw.app → **Settings** → **General** → **"OpenClaw runs"**
+2. 选择 **"Remote over SSH"**
+3. 填入远程服务器地址和 SSH 配置
+4. App 会自动管理 SSH 隧道，WebChat 和健康检查"开箱即用"
+
+> **提示**：远程模式的详细配置参见[第九章 远程访问](/cn/adopt/chapter9/)。
+
+<details>
+<summary>Control UI vs Dashboard 对比</summary>
+
+| 对比维度 | Control UI | Dashboard |
+|---------|-----------|-----------|
+| 平台 | 仅 macOS | 全平台（浏览器） |
+| 安装 | 需下载 App | Gateway 内置 |
+| 系统集成 | 菜单栏、通知、快捷键 | 无 |
+| 远程连接 | 内置 SSH 管理 | 需手动建隧道 |
+| 离线状态 | 可查看缓存数据 | 需 Gateway 运行 |
+| 推荐人群 | macOS 重度用户 | 跨平台用户、远程管理 |
+
+两者可以同时使用——Control UI 管理 Gateway 生命周期，Dashboard 做细粒度配置。
+
+</details>
+
+## 4. TUI（终端聊天）
+
+TUI（Terminal User Interface）是最轻量的交互方式——直接在终端中和龙虾对话，不需要浏览器，不需要 GUI。
+
+### 启动 TUI
+
+```bash
+openclaw chat
+```
+
+进入交互式对话模式，输入消息后按回车发送，龙虾会在终端中回复。
+
+### 适用场景
+
+| 场景 | 说明 |
+|------|------|
+| **SSH 远程** | 通过 SSH 登录服务器后直接聊天，无需隧道 |
+| **无 GUI 环境** | 服务器、Docker 容器、WSL 等没有图形界面的环境 |
+| **快速测试** | 一条命令验证龙虾是否正常工作 |
+| **脚本集成** | 在 Shell 脚本中调用龙虾处理任务 |
+
+### 单次消息模式
+
+如果不想进入交互模式，可以直接发送一条消息：
+
+```bash
+openclaw agent --message "帮我写一个 Python hello world"
+```
+
+<details>
+<summary>TUI 进阶用法</summary>
+
+**指定思考级别**：
+
+```bash
+openclaw agent --message "分析这段代码的安全性" --thinking high
+```
+
+**指定 Agent**：
+
+如果配置了多个 Agent（详见[附录 G 配置文件详解](/cn/appendix/appendix-g)），可以指定使用哪个：
+
+```bash
+openclaw agent --message "查看今天的日程" --agent home
+openclaw agent --message "审查这个 PR" --agent work
+```
+
+**管道输入**：
+
+TUI 支持从管道接收输入，方便与其他命令组合：
+
+```bash
+# 让龙虾解释一段代码
+cat script.py | openclaw agent --message "解释这段代码"
+
+# 让龙虾分析日志
+openclaw logs --limit 50 --plain | openclaw agent --message "有什么异常？"
+```
+
+</details>
+
+## 5. 界面选择指南
+
+### 按场景选择
+
+| 你想做什么 | 推荐界面 |
+|-----------|---------|
+| 第一次安装，确认龙虾能用 | `openclaw chat`（最快） |
+| 日常管理配置 | Dashboard |
+| 和龙虾聊天（有浏览器） | WebChat |
+| 和龙虾聊天（SSH 远程） | `openclaw chat` |
+| macOS 全功能体验 | Control UI |
+| 调试技能和工具 | WebChat + Dashboard（查看工具调用） |
+| 在脚本中调用龙虾 | `openclaw agent --message` |
+
+### 按环境选择
+
+| 你的环境 | 推荐界面 |
+|---------|---------|
+| macOS 桌面 | Control UI + Dashboard |
+| Windows / Linux 桌面 | Dashboard + WebChat |
+| 云服务器（SSH） | TUI（`openclaw chat`） |
+| Docker 容器 | TUI |
+| 手机/平板 | WebChat（通过浏览器） |
+
+### 多界面协同
+
+这些界面**不是互斥的**——它们都连接到同一个 Gateway，可以同时使用：
+
+- 用 **Control UI** 启动和监控 Gateway
+- 用 **Dashboard** 管理配置和查看对话历史
+- 用 **WebChat** 日常聊天
+- 用 **TUI** 在终端中快速提问
+
+所有界面共享同一个 Gateway 的会话、技能和配置。在 WebChat 中的对话可以在 Dashboard 的 Conversations 中查看，反之亦然。
+
+## 6. 常见问题
+
+**Q: 打开 Dashboard 显示连接失败？**
+
+A: 确认 Gateway 正在运行：
+
+```bash
+openclaw gateway status
+```
+
+如果 Gateway 未运行，先启动它：
+
+```bash
+openclaw gateway restart
+```
+
+**Q: Dashboard 打不开，端口被占用？**
+
+A: 检查端口占用情况：
+
+```bash
+# Linux / macOS
+ss -tlnp | grep 18789
+
+# Windows
+netstat -ano | findstr 18789
+```
+
+如果被其他进程占用，可以更换端口（见上文"更改 Dashboard 端口"）或使用 `--force` 强制释放。
+
+**Q: WebChat 发消息没有回复？**
+
+A: 依次检查：
+1. `openclaw status` 确认 Gateway 和 Agent 正常
+2. `openclaw logs --follow` 查看实时日志，发送一条消息观察是否有错误
+3. 确认模型配置正确、API Key 有效（详见[第五章 模型管理](/cn/adopt/chapter5/)）
+
+**Q: 远程服务器上能用 WebChat 吗？**
+
+A: 可以。建立 SSH 隧道后，在本地浏览器访问 `http://localhost:18789` 即可。Tailscale 用户可以直接通过 Tailscale IP 访问（详见[第九章 远程访问](/cn/adopt/chapter9/)）。
+
+**Q: Control UI 只有 macOS 版本吗？**
+
+A: 是的。Windows 和 Linux 用户可以使用 Dashboard（功能基本等价）或社区桌面客户端如 [ClawX](/cn/adopt/chapter1/)。
 
 ---
 
 **下一步**：
-
-恭喜！领养篇 11 章全部完成 🦞 以下附录可按需查阅：
-
-| 附录 | 内容简介 |
-|------|---------|
-| [附录 A：学习资源汇总](/cn/appendix/appendix-a) | 8 大类学习资源，80+ 精选链接 |
-| [附录 B：社区之声与生态展望](/cn/appendix/appendix-b) | 6 大议题深度讨论 + 金句精选 |
-| [附录 C：类 Claw 方案对比与选型](/cn/appendix/appendix-c) | 桌面客户端 / 托管服务 / 云厂商 / 开源自建 / 移动端 5 大类对比 |
-| [附录 D：技能开发与发布指南](/cn/appendix/appendix-d) | SKILL.md 格式 + skill-creator + ClawHub 发布流程 |
-| [附录 E：模型提供商选型指南](/cn/appendix/appendix-e) | 聚合网关 / 国内 / 国际 / 本地 4 大类系统对比 |
-| [附录 F：命令速查表](/cn/appendix/appendix-f) | 按场景分类的全部 CLI 命令参考 |
-| [附录 G：配置文件详解](/cn/appendix/appendix-g) | openclaw.json 各项参数逐项解读 |
-
-- 想深入了解原理？→ [构建 Claw（开发篇）](/cn/build/)
+- 配置首次使用向导 → [第三章 配置向导](/cn/adopt/chapter3/)

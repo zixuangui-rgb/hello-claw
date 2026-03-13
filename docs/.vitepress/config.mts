@@ -63,21 +63,21 @@ export default defineConfig({
                   items: [
                     { text: '第1章 AutoClaw 一键安装', link: '/cn/adopt/chapter1' },
                     { text: '第2章 OpenClaw 手动安装', link: '/cn/adopt/chapter2' },
+                    { text: '第3章 配置向导', link: '/cn/adopt/chapter3' },
                   ]
                 },
                 {
                   text: '🟢 场景配置',
                   collapsed: false,
                   items: [
-                    { text: '第3章 Channels 配置', link: '/cn/adopt/chapter3' },
-                    { text: '第4章 Models 配置', link: '/cn/adopt/chapter4' },
-                    { text: '第5章 Agents 配置', link: '/cn/adopt/chapter5' },
-                    { text: '第6章 Tools 配置', link: '/cn/adopt/chapter6' },
-                    { text: '第7章 Gateway 配置', link: '/cn/adopt/chapter7' },
-                    { text: '第8章 远程访问与网络', link: '/cn/adopt/chapter8' },
-                    { text: '第9章 安全防护与威胁模型', link: '/cn/adopt/chapter9' },
-                    { text: '第10章 Web 界面与客户端', link: '/cn/adopt/chapter10' },
-                    { text: '第11章 Onboarding 配置向导', link: '/cn/adopt/chapter11' },
+                    { text: '第4章 聊天平台接入', link: '/cn/adopt/chapter4' },
+                    { text: '第5章 模型管理', link: '/cn/adopt/chapter5' },
+                    { text: '第6章 智能体管理', link: '/cn/adopt/chapter6' },
+                    { text: '第7章 工具与定时任务', link: '/cn/adopt/chapter7' },
+                    { text: '第8章 网关运维', link: '/cn/adopt/chapter8' },
+                    { text: '第9章 远程访问与网络', link: '/cn/adopt/chapter9' },
+                    { text: '第10章 安全防护与威胁模型', link: '/cn/adopt/chapter10' },
+                    { text: '第11章 Web 界面与客户端', link: '/cn/adopt/chapter11' },
                   ]
                 },
               ]
@@ -106,21 +106,21 @@ export default defineConfig({
                   items: [
                     { text: '第1章 AutoClaw 一键安装', link: '/cn/adopt/chapter1' },
                     { text: '第2章 OpenClaw 手动安装', link: '/cn/adopt/chapter2' },
+                    { text: '第3章 配置向导', link: '/cn/adopt/chapter3' },
                   ]
                 },
                 {
                   text: '🟢 场景配置',
                   collapsed: false,
                   items: [
-                    { text: '第3章 Channels 配置', link: '/cn/adopt/chapter3' },
-                    { text: '第4章 Models 配置', link: '/cn/adopt/chapter4' },
-                    { text: '第5章 Agents 配置', link: '/cn/adopt/chapter5' },
-                    { text: '第6章 Tools 配置', link: '/cn/adopt/chapter6' },
-                    { text: '第7章 Gateway 配置', link: '/cn/adopt/chapter7' },
-                    { text: '第8章 远程访问与网络', link: '/cn/adopt/chapter8' },
-                    { text: '第9章 安全防护与威胁模型', link: '/cn/adopt/chapter9' },
-                    { text: '第10章 Web 界面与客户端', link: '/cn/adopt/chapter10' },
-                    { text: '第11章 Onboarding 配置向导', link: '/cn/adopt/chapter11' },
+                    { text: '第4章 聊天平台接入', link: '/cn/adopt/chapter4' },
+                    { text: '第5章 模型管理', link: '/cn/adopt/chapter5' },
+                    { text: '第6章 智能体管理', link: '/cn/adopt/chapter6' },
+                    { text: '第7章 工具与定时任务', link: '/cn/adopt/chapter7' },
+                    { text: '第8章 网关运维', link: '/cn/adopt/chapter8' },
+                    { text: '第9章 远程访问与网络', link: '/cn/adopt/chapter9' },
+                    { text: '第10章 安全防护与威胁模型', link: '/cn/adopt/chapter10' },
+                    { text: '第11章 Web 界面与客户端', link: '/cn/adopt/chapter11' },
                   ]
                 },
               ]

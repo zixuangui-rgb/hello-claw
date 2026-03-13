@@ -118,7 +118,7 @@
 
 左侧 **IM Channels** 标签页 → **Connect IM Channels** → 选择飞书（国内）或 Lark（海外），按页面上的"飞书后台配置指引"操作即可。
 
-更多聊天平台详见[第三章](/cn/adopt/chapter3/)。
+更多聊天平台详见[第四章](/cn/adopt/chapter4/)。
 
 </details>
 
