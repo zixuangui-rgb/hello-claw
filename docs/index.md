@@ -75,16 +75,16 @@ const members = [
 | **🔵 安装** | | |
 | 第 1 章 AutoClaw 一键安装 | 下载 AutoClaw 桌面客户端，5 分钟零门槛体验 | ✅ |
 | 第 2 章 OpenClaw 手动安装 | 终端介绍、Node.js 安装、npm install、onboard 配置向导 | ✅ |
+| 第 3 章 配置向导 | CLI 向导、macOS 引导、Custom Provider、重新配置 | ✅ |
 | **🟢 场景配置** | | |
-| 第 3 章 Channels 配置 | QQ / 飞书 / Telegram 三平台接入、配对与群聊 | ✅ |
-| 第 4 章 Models 配置 | 模型概念、CLI 管理、多提供商配置、API Key 轮换、故障转移 | ✅ |
-| 第 5 章 Agents 配置 | 多 Agent 管理、工作区、心跳、绑定规则 | ✅ |
-| 第 6 章 Tools 配置 | 工具集级别、定时任务（cron/at/every）、Web 搜索 | ✅ |
-| 第 7 章 Gateway 配置 | 启动管理、热更新、认证安全、密钥管理、沙箱策略、日志监控 | ✅ |
-| 第 8 章 远程访问与网络 | SSH 隧道、Tailscale 组网、部署架构、安全最佳实践 | ✅ |
-| 第 9 章 安全防护与威胁模型 | 威胁全景、VM 隔离、信任边界、MITRE ATLAS、供应链安全 | ✅ |
-| 第 10 章 Web 界面与客户端 | Dashboard、WebChat、Control UI、TUI、第三方客户端 | ✅ |
-| 第 11 章 Onboarding 配置向导 | CLI 向导、macOS 引导、Custom Provider、重新配置 | ✅ |
+| 第 4 章 聊天平台接入 | QQ / 飞书 / Telegram 三平台接入、配对与群聊 | ✅ |
+| 第 5 章 模型管理 | 模型概念、CLI 管理、多提供商配置、API Key 轮换、故障转移 | ✅ |
+| 第 6 章 智能体管理 | 多 Agent 管理、工作区、心跳、绑定规则 | ✅ |
+| 第 7 章 工具与定时任务 | 工具集级别、定时任务（cron/at/every）、Web 搜索 | ✅ |
+| 第 8 章 网关运维 | 启动管理、热更新、认证安全、密钥管理、沙箱策略、日志监控 | ✅ |
+| 第 9 章 远程访问与网络 | SSH 隧道、Tailscale 组网、部署架构、安全最佳实践 | ✅ |
+| 第 10 章 安全防护与威胁模型 | 威胁全景、VM 隔离、信任边界、MITRE ATLAS、供应链安全 | ✅ |
+| 第 11 章 Web 界面与客户端 | Dashboard、WebChat、Control UI、TUI、第三方客户端 | ✅ |
 | **附录** | | |
 | 附录 A：学习资源汇总 | 8 大类学习资源，80+ 链接，编者精选 | ✅ |
 | 附录 B：社区之声与生态展望 | 6 大议题深度讨论 + 金句精选 | ✅ |

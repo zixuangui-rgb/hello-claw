@@ -1,429 +1,469 @@
-# 第三章 Channels 配置
+# 第三章 配置向导
 
-> 本章介绍如何将 OpenClaw 接入聊天平台，让你的龙虾拥有"联系方式"。完成后你可以在飞书中随时和它对话。
+> 本章详解 OpenClaw 的首次配置体验——从「装好了，然后呢？」到「龙虾已就绪」的完整流程。
 
-> **AutoClaw 用户提示**：[AutoClaw](/cn/adopt/chapter1/) 已内置飞书一键接入（扫码即完成），可跳过本章。
+> **前置条件**：已完成[第二章 OpenClaw 手动安装](/cn/adopt/chapter2/)，OpenClaw CLI 已安装。
 
-## 0. 支持的聊天平台
+## 0. 全景：两条 Onboarding 路径
 
-OpenClaw 可以连接你日常使用的几乎所有聊天软件。每个渠道通过 Gateway 接入，文字消息全渠道支持，媒体和互动能力因平台而异。
+安装完 OpenClaw 后，你需要通过 **Onboarding（配置向导）** 告诉龙虾三件事：用谁的大脑（模型）、怎么联系你（渠道）、在哪里工作（工作区）。OpenClaw 提供两条路径：
 
-| 渠道 | 说明 | 安装方式 |
-|------|------|---------|
-| **飞书 / Lark** | WebSocket 长连接；企业协作首选 | 内置 |
-| **WhatsApp** | 全球最流行；Baileys 库，需 QR 配对 | 内置 |
-| **Telegram** | Bot API（grammY）；支持群聊，API 最开放 | 内置 |
-| **Discord** | Bot API + Gateway；服务器、频道、私信 | 内置 |
-| **Slack** | Bolt SDK；工作区应用 | 内置 |
-| **Signal** | signal-cli；注重隐私 | 内置 |
-| **Google Chat** | Google Chat API；HTTP webhook | 内置 |
-| **iMessage** | BlueBubbles（推荐）或旧版 imsg CLI | 内置 |
-| **IRC** | 经典 IRC 服务器；频道 + 私信 | 内置 |
-| **WebChat** | Gateway 内置 Web 聊天界面 | 内置 |
-| **QQ** | QQ 开放平台 Bot API | 插件 |
-| **LINE** | LINE Messaging API | 插件 |
-| **Matrix** | Matrix 开放协议 | 插件 |
-| **Mattermost** | Bot API + WebSocket | 插件 |
-| **Microsoft Teams** | Bot Framework；企业支持 | 插件 |
-| **Nostr** | 去中心化协议 NIP-04 | 插件 |
-| **Twitch** | IRC 连接 | 插件 |
-| **Zalo** | Zalo Bot API（越南） | 插件 |
-
-> **多渠道同时接入**：你可以同时连接多个平台，OpenClaw 会自动按来源路由消息。比如在飞书处理工作、在 Telegram 做个人助理——它们共享同一个 AI 大脑。
-
-> **最快上手**：Telegram 配置最简单（只需一个 Bot Token），但在国内需要代理。本章以**飞书**为例——它与国内办公场景高度契合，深度集成文档、日历、多维表格等能力，能真正成为你的"数字分身"。
-
-## 1. 前置准备
-
-在开始之前，确保：
-
-- 已完成 [第二章](/cn/adopt/chapter2/) 的安装，OpenClaw 正在运行（`openclaw status` 显示正常）
-- 拥有飞书账号
-
-<details>
-<summary>个人用户也能用</summary>
-
-即使你不是企业管理员，飞书也允许创建"企业自建应用"用于个人测试和使用，不需要企业认证。
-
-</details>
-
-## 2. 创建飞书应用
-
-### 第一步：登录飞书开放平台
-
-访问 [飞书开放平台](https://open.feishu.cn/app)，使用飞书账号登录。
-
-<!-- TODO: 补充飞书开放平台首页截图（创建应用按钮位置） -->
-
-<details>
-<summary>国际版 Lark 用户</summary>
-
-请访问 [Lark Open Platform](https://open.larksuite.com/app)，后续配置中需设置 `domain: "lark"`。
-
-</details>
-
-### 第二步：创建企业自建应用
-
-1. 点击"创建企业自建应用"
-2. 填写应用名称（如"OpenClaw 助理"）、描述、选择图标
-3. 点击"创建"进入应用详情页
-
-### 第三步：获取应用凭证
-
-进入"凭证与基础信息"页面，复制 **App ID**（格式 `cli_xxx`）和 **App Secret**。
-
-<!-- TODO: 补充飞书应用凭证页面截图（App ID 和 App Secret 位置） -->
-
-> **重要**：App Secret 务必立即复制保存，不要泄露给他人。
-
-### 第四步：配置权限
-
-进入"权限管理"页面，点击"批量导入"按钮，粘贴以下 JSON 一键导入所需权限：
-
-<!-- TODO: 补充飞书权限管理页面截图（批量导入按钮位置） -->
-
-```json
-{
-  "scopes": {
-    "tenant": [
-      "contact:contact.base:readonly",
-      "docx:document:readonly",
-      "im:chat:read",
-      "im:chat:update",
-      "im:message.group_at_msg:readonly",
-      "im:message.p2p_msg:readonly",
-      "im:message.pins:read",
-      "im:message.pins:write_only",
-      "im:message.reactions:read",
-      "im:message.reactions:write_only",
-      "im:message:readonly",
-      "im:message:recall",
-      "im:message:send_as_bot",
-      "im:message:send_multi_users",
-      "im:message:send_sys_msg",
-      "im:message:update",
-      "im:resource",
-      "application:application:self_manage",
-      "cardkit:card:write",
-      "cardkit:card:read"
-    ],
-    "user": [
-      "contact:user.employee_id:readonly",
-      "offline_access",
-      "base:app:copy",
-      "base:field:create",
-      "base:field:delete",
-      "base:field:read",
-      "base:field:update",
-      "base:record:create",
-      "base:record:delete",
-      "base:record:retrieve",
-      "base:record:update",
-      "base:table:create",
-      "base:table:delete",
-      "base:table:read",
-      "base:table:update",
-      "base:view:read",
-      "base:view:write_only",
-      "base:app:create",
-      "base:app:update",
-      "base:app:read",
-      "board:whiteboard:node:create",
-      "board:whiteboard:node:read",
-      "calendar:calendar:read",
-      "calendar:calendar.event:create",
-      "calendar:calendar.event:delete",
-      "calendar:calendar.event:read",
-      "calendar:calendar.event:reply",
-      "calendar:calendar.event:update",
-      "calendar:calendar.free_busy:read",
-      "contact:contact.base:readonly",
-      "contact:user.base:readonly",
-      "contact:user:search",
-      "docs:document.comment:create",
-      "docs:document.comment:read",
-      "docs:document.comment:update",
-      "docs:document.media:download",
-      "docs:document:copy",
-      "docx:document:create",
-      "docx:document:readonly",
-      "docx:document:write_only",
-      "drive:drive.metadata:readonly",
-      "drive:file:download",
-      "drive:file:upload",
-      "im:chat.members:read",
-      "im:chat:read",
-      "im:message",
-      "im:message.group_msg:get_as_user",
-      "im:message.p2p_msg:get_as_user",
-      "im:message:readonly",
-      "search:docs:read",
-      "search:message",
-      "space:document:delete",
-      "space:document:move",
-      "space:document:retrieve",
-      "task:comment:read",
-      "task:comment:write",
-      "task:task:read",
-      "task:task:write",
-      "task:task:writeonly",
-      "task:tasklist:read",
-      "task:tasklist:write",
-      "wiki:node:copy",
-      "wiki:node:create",
-      "wiki:node:move",
-      "wiki:node:read",
-      "wiki:node:retrieve",
-      "wiki:space:read",
-      "wiki:space:retrieve",
-      "wiki:space:write_only"
-    ]
-  }
-}
+```
+┌─────────────────────────────────────────────────────┐
+│              OpenClaw Onboarding 路径                │
+├─────────────────────────┬───────────────────────────┤
+│    CLI 配置向导          │     macOS 应用引导         │
+│    (所有平台)            │     (仅 macOS)            │
+│                         │                           │
+│  openclaw onboard       │  OpenClaw.app 首次启动     │
+│  终端交互式问答          │  图形化分步引导            │
+│  完全控制每个细节        │  自动申请系统权限          │
+│  支持脚本化/非交互       │  内置 Onboarding 对话      │
+└────────────┬────────────┴─────────────┬─────────────┘
+             │                          │
+             └──────────┬───────────────┘
+                        ▼
+              Gateway 启动 ✅ 龙虾就绪
 ```
 
-> 批量导入会自动开通消息收发、云文档、多维表格、日历、任务等完整能力。
+| 路径 | 适用场景 | 平台 |
+|------|---------|------|
+| **CLI 配置向导** | 需要完全控制、远程服务器、自动化脚本 | macOS / Linux / Windows (WSL2) |
+| **macOS 应用引导** | 希望图形化引导、需要语音/摄像头等原生权限 | 仅 macOS |
 
-<details>
-<summary>这些权限分别做什么？</summary>
+> **已经在第二章跑过 `openclaw onboard` 了？** 那你已经完成了基本配置！本章帮你理解向导的每一步做了什么，以及如何利用高级选项微调配置。
 
-| 权限类别 | 代表权限 | 用途 |
-|---------|---------|------|
-| **消息（im:）** | `im:message`、`im:message:send_as_bot`、`im:resource` | 收发消息、图片、文件 |
-| **联系人（contact:）** | `contact:user.base:readonly` | 获取用户基础信息 |
-| **云文档（docx:/docs:）** | `docx:document:create`、`docx:document:readonly` | 创建和读取飞书文档 |
-| **多维表格（base:）** | `base:record:create`、`base:table:read` | 操作多维表格数据 |
-| **日历（calendar:）** | `calendar:calendar.event:create`、`calendar:calendar.event:read` | 管理日程 |
-| **任务（task:）** | `task:task:read`、`task:task:write` | 创建和管理飞书任务 |
-| **知识库（wiki:）** | `wiki:node:read`、`wiki:space:read` | 读写飞书知识库 |
-| **云空间（drive:/space:）** | `drive:file:upload`、`drive:file:download` | 上传下载文件 |
+---
 
-如果你只需要基础聊天功能，最少只需 `im:message`、`im:message.p2p_msg:readonly`、`im:message.group_at_msg:readonly`、`im:message:send_as_bot`、`im:resource` 这几个消息相关权限即可。但建议导入完整权限以获得最佳体验。
+## 1. CLI 配置向导（所有平台）
 
-</details>
+CLI 向导是最通用的 Onboarding 方式，适用于 macOS、Linux 和 Windows（WSL2）。
 
-导入权限后，点击"提交审核"。如果你是企业管理员可直接通过；否则需联系管理员审核。
-
-### 第五步：启用机器人能力
-
-进入"添加应用能力" → "机器人"页面：
-
-1. 开启机器人能力
-2. 设置机器人显示名称（如"OpenClaw 助理"）
-
-### 第六步：配置事件订阅
-
-> **重要**：在配置事件订阅之前，请先完成下面的[第 3 步](#_3-在-openclaw-中添加飞书渠道)（添加飞书渠道并确保网关在运行）。否则长连接设置可能保存失败。
-
-进入"事件与回调" → "事件配置"：
-
-1. 选择"**使用长连接接收事件**"（WebSocket 模式）
-2. 添加事件：`im.message.receive_v1`（接收消息事件）
-
-<details>
-<summary>什么是"长连接"？为什么推荐？</summary>
-
-传统的 webhook 方式需要你有一个公网可访问的地址，飞书把消息推送过来。而长连接（WebSocket）是反过来的——OpenClaw 主动连接飞书服务器并保持连接，消息实时送达。
-
-好处：不需要公网 IP、不需要域名、不需要端口映射，家用网络就能用。这也是 OpenClaw 的默认推荐方式。
-
-</details>
-
-### 第七步：发布应用
-
-1. 进入"版本管理与发布"
-2. 点击"创建版本"，填写版本号和更新说明
-3. 提交审核并发布
-4. 等待管理员审批（企业自建应用通常自动通过）
-
-## 3. 在 OpenClaw 中添加飞书渠道
-
-飞书应用创建完成后，回到终端，将飞书渠道添加到 OpenClaw。
-
-**方式一：命令行向导（推荐）**
-
-```bash
-openclaw channels add
-```
-
-按交互式提示操作：
-1. 选择 "Feishu/Lark (飞书)"
-2. 输入 App ID 和 App Secret
-3. 其他选项保持默认即可
-
-**方式二：通过配置向导添加**
-
-如果你刚安装完 OpenClaw、还没完成过初始配置，可以运行：
+### 1.1 启动向导
 
 ```bash
 openclaw onboard
 ```
 
-向导会引导你完成模型配置和渠道添加。
+> **想同时安装后台服务？** 加 `--install-daemon` 一步到位：
+> ```bash
+> openclaw onboard --install-daemon
+> ```
 
-添加完成后，重启网关使配置生效：
+### 1.2 QuickStart vs Advanced
 
-```bash
-openclaw gateway restart
-```
+向导启动后会问你第一个问题：**QuickStart（快速开始）** 还是 **Advanced（高级模式）**？
 
-验证网关状态：
-
-```bash
-openclaw gateway status
-```
+| 选项 | 自动配置内容 | 适合谁 |
+|------|------------|--------|
+| **QuickStart** | 本地 Gateway + 默认工作区 + 端口 18789 + Token 认证 + coding 工具策略 | 第一次用，想尽快聊天 |
+| **Advanced** | 所有选项都可自定义 | 需要远程部署、Tailscale、特殊安全策略 |
 
 <details>
-<summary>手动编辑配置文件（高级）</summary>
+<summary>QuickStart 默认配置一览</summary>
 
-编辑 `~/.openclaw/openclaw.json`（Windows：`C:\Users\你的用户名\.openclaw\openclaw.json`）：
+QuickStart 模式自动应用以下默认值：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| Gateway 位置 | 本机（loopback） | 仅本机可访问 |
+| 工作区 | `~/.openclaw/workspace/` | 或使用已有工作区 |
+| Gateway 端口 | 18789 | 标准端口 |
+| 认证方式 | Token（自动生成） | 即使本地也需认证 |
+| 工具策略 | `tools.profile: "coding"` | 保留文件系统和运行时工具 |
+| DM 隔离 | `session.dmScope: "per-channel-peer"` | 每个渠道独立会话 |
+| Tailscale | 关闭 | 不暴露到 Tailnet |
+| Telegram/WhatsApp DM | 白名单模式 | 会提示输入你的手机号 |
+
+> 已有自定义 `tools.profile` 的用户不会被覆盖——向导尊重现有配置。
+
+</details>
+
+### 1.3 向导配置的六个步骤
+
+无论选择哪种模式，向导都会依次走过这些步骤：
+
+#### 步骤一：模型与认证
+
+选择模型提供商和认证方式。支持的认证方式：
+
+- **API Key**：直接粘贴密钥（最常用）
+- **OAuth**：浏览器授权（部分提供商支持）
+- **Setup Token**：一次性令牌
+
+> 不确定选哪个？详见[第五章 模型管理](/cn/adopt/chapter5/)了解各提供商的接入方式。
+
+<details>
+<summary>安全提示：模型选择与工具安全</summary>
+
+如果你的龙虾会运行工具（执行命令、调用 API）或处理来自 Webhook/Hooks 的外部内容，请注意：
+
+- **优先选择最新一代的强模型**——较弱/较旧的模型更容易被提示词注入攻击
+- **保持严格的工具策略**——避免使用 `tools.profile: "full"`（不限制模式），除非你完全信任所有输入来源
+- 详见[第十章 安全防护](/cn/adopt/chapter10/)
+
+</details>
+
+<details>
+<summary>密钥存储：明文 vs SecretRef</summary>
+
+向导默认将 API Key 以明文存储在配置文件中。如果你需要更安全的存储方式：
+
+**交互模式**：选择 Secret Reference 模式，可以指向环境变量或 Provider Ref（文件/可执行程序），向导会立即验证引用是否有效。
+
+**非交互模式**：使用 `--secret-input-mode ref`，此时提供商的环境变量必须已设置：
+```bash
+export OPENAI_API_KEY="sk-..."
+openclaw onboard --secret-input-mode ref --non-interactive
+```
+
+</details>
+
+#### 步骤二：工作区
+
+配置龙虾的工作目录，存放 IDENTITY.md、MEMORY.md 等工作区文件。
+
+- 默认路径：`~/.openclaw/workspace/`
+- 如果路径下已有工作区文件，向导会复用而非覆盖
+
+#### 步骤三：Gateway 配置
+
+设置 Gateway 的运行参数：
+
+- **端口**：默认 18789
+- **绑定地址**：默认 127.0.0.1（仅本机）
+- **认证模式**：Token 或密码
+- **Tailscale 暴露**：是否通过 Tailnet 访问
+
+<details>
+<summary>Gateway Token 与 SecretRef</summary>
+
+在交互式 Token 模式下，你可以选择：
+- **明文 Token**（默认）：存储在配置文件中
+- **SecretRef**：通过环境变量或外部程序管理 Token
+
+非交互模式下使用 SecretRef：
+```bash
+openclaw onboard --gateway-token-ref-env GATEWAY_TOKEN --non-interactive
+```
+
+注意：如果同时配置了 `gateway.auth.token` 和 `gateway.auth.password` 但未设置 `gateway.auth.mode`，后台服务安装会被阻止，直到你明确选择一种模式。
+
+</details>
+
+#### 步骤四：渠道接入
+
+选择要连接的聊天平台：
+
+- WhatsApp、Telegram、Discord、Google Chat
+- Mattermost、Signal、BlueBubbles、iMessage
+
+> 可以跳过，后续用 `openclaw channels add` 随时添加。各渠道详细配置见[第四章 Chat Provider](/cn/adopt/chapter4/)。
+
+#### 步骤五：后台服务
+
+安装 Gateway 后台服务，确保重启后自动运行：
+
+- **macOS**：LaunchAgent（`ai.openclaw.gateway`）
+- **Linux / WSL2**：systemd 用户服务（`openclaw-gateway.service`）
+
+<details>
+<summary>后台服务与 SecretRef 的注意事项</summary>
+
+- 如果 Token 认证使用 SecretRef，后台服务安装时会验证引用有效性，但**不会**将解析后的 Token 持久化到服务环境中
+- 如果配置的 SecretRef 无法解析，后台服务安装会被阻止，并给出修复建议
+- 使用 `openclaw doctor` 可以自动检测和修复服务问题
+
+</details>
+
+#### 步骤六：健康检查与技能安装
+
+向导的最后阶段：
+
+1. **启动 Gateway** 并验证运行状态
+2. **安装推荐技能**和可选依赖
+
+> 想了解技能系统？详见[附录 D：技能开发与发布指南](/cn/appendix/appendix-d)。
+
+### 1.4 Web 搜索配置
+
+向导还包含一个 **Web 搜索** 配置步骤，让龙虾能使用 `web_search` 工具。支持的搜索提供商：
+
+| 提供商 | 说明 |
+|--------|------|
+| Perplexity | AI 搜索引擎 |
+| Brave | 隐私搜索 |
+| Gemini | Google AI 搜索 |
+| Grok | xAI 搜索 |
+| Kimi | 月之暗面搜索 |
+
+粘贴对应的 API Key 即可启用。也可以后续配置：
+
+```bash
+openclaw configure --section web
+```
+
+---
+
+## 2. macOS 应用引导
+
+如果你使用 macOS 上的 OpenClaw.app（Control UI），首次启动会进入图形化引导流程。
+
+### 2.1 引导步骤总览
+
+| 步骤 | 内容 | 操作 |
+|------|------|------|
+| ① | macOS 安全警告 | 点击「允许」 |
+| ② | 本地网络发现 | 允许查找本地网络设备 |
+| ③ | 安全须知 | 阅读信任模型说明 |
+| ④ | 选择 Gateway 位置 | 本机 / 远程 / 稍后配置 |
+| ⑤ | 系统权限申请 | 逐项授权 |
+| ⑥ | 安装 CLI（可选） | 安装 `openclaw` 命令行工具 |
+| ⑦ | Onboarding 对话 | 龙虾自我介绍 + 引导下一步 |
+
+### 2.2 安全须知（步骤 ③）
+
+应用会显示 OpenClaw 的信任模型说明：
+
+- **默认定位**：个人助手——一个可信操作者边界
+- **多用户场景**：需要拆分信任边界、最小化工具权限、参考[第十章 安全防护](/cn/adopt/chapter10/)
+- **本地新安装**默认使用 `tools.profile: "coding"`，保留文件系统和运行时工具
+
+### 2.3 Gateway 位置选择（步骤 ④）
+
+| 选项 | 说明 |
+|------|------|
+| **This Mac（本机）** | 在本机运行 Gateway，应用直接配置认证和凭证 |
+| **Remote（远程）** | 连接远程 Gateway（通过 SSH 或 Tailnet），不修改本机认证 |
+| **Configure later（稍后配置）** | 跳过设置，应用保持未配置状态 |
+
+<details>
+<summary>Gateway 认证提示</summary>
+
+- 向导现在即使对本地回环连接也会生成 Token，所以本地 WebSocket 客户端也需要认证
+- 如果禁用认证，任何本地进程都能连接——仅在完全可信的机器上这样做
+- 多机访问或非回环绑定时，请务必使用 Token 认证
+
+</details>
+
+### 2.4 系统权限（步骤 ⑤）
+
+macOS 应用会请求以下 TCC 权限：
+
+| 权限 | 用途 |
+|------|------|
+| **Automation（自动化）** | AppleScript 控制其他应用 |
+| **Notifications（通知）** | 推送消息提醒 |
+| **Accessibility（辅助功能）** | UI 交互控制 |
+| **Screen Recording（屏幕录制）** | 截屏/屏幕共享 |
+| **Microphone（麦克风）** | 语音输入 |
+| **Speech Recognition（语音识别）** | 语音转文字 |
+| **Camera（摄像头）** | 视觉输入 |
+| **Location（定位）** | 位置感知 |
+
+> 不需要的权限可以跳过，后续在 macOS「系统设置 → 隐私与安全性」中随时调整。
+
+### 2.5 CLI 安装（步骤 ⑥）
+
+应用可以通过 npm/pnpm 安装全局 `openclaw` CLI，这样终端命令和 LaunchAgent 定时任务都能正常工作。此步骤可选——如果你已经通过[第二章](/cn/adopt/chapter2/)安装了 CLI，可以跳过。
+
+### 2.6 Onboarding 对话（步骤 ⑦）
+
+完成设置后，应用会打开一个**专用的 Onboarding 对话会话**：
+
+- 龙虾会自我介绍并引导你探索功能
+- 这个对话与你的正常会话**分开**，不会干扰日常使用
+- Gateway 端首次运行时会执行 Bootstrapping（引导启动），初始化工作区文件
+
+---
+
+## 3. 自定义模型提供商（Custom Provider）
+
+如果向导内置列表中没有你想用的提供商——比如自建的 API 网关、公司内部模型服务、或其他兼容 OpenAI/Anthropic 接口的服务——可以选择 **Custom Provider**。
+
+### 3.1 配置步骤
+
+在向导的模型选择环节，选择 **Custom Provider**，然后依次填写：
+
+| 步骤 | 内容 | 示例 |
+|------|------|------|
+| 1. 选择兼容类型 | OpenAI-compatible / Anthropic-compatible / Unknown（自动检测） | OpenAI-compatible |
+| 2. 输入 Base URL | 提供商的 API 地址 | `https://api.mycompany.com/v1` |
+| 3. 输入 API Key | 如果需要的话 | `sk-custom-...` |
+| 4. 填写 Model ID | 模型标识符 | `gpt-4o` |
+| 5. 设置别名（可选） | 方便记忆的短名称 | `company-gpt` |
+| 6. 设置 Endpoint ID | 区分多个自定义端点 | `mycompany` |
+
+<details>
+<summary>多个自定义端点共存</summary>
+
+每个 Custom Provider 通过 **Endpoint ID** 区分，所以你可以同时配置多个自定义端点：
 
 ```json
+// openclaw.json 示例
 {
-  "channels": {
-    "feishu": {
-      "enabled": true,
-      "connectionMode": "websocket",
-      "dmPolicy": "pairing",
-      "accounts": {
-        "main": {
-          "appId": "cli_xxx",
-          "appSecret": "你的App Secret"
-        }
+  "models": {
+    "providers": {
+      "custom-company-a": {
+        "type": "openai",
+        "baseUrl": "https://api.company-a.com/v1",
+        "apiKey": "sk-a-..."
+      },
+      "custom-company-b": {
+        "type": "anthropic",
+        "baseUrl": "https://api.company-b.com/v1",
+        "apiKey": "sk-b-..."
       }
     }
   }
 }
 ```
 
-修改后运行 `openclaw gateway restart` 生效。
+详见[附录 G：配置文件详解](/cn/appendix/appendix-g)。
 
 </details>
 
-> **注意顺序**：先完成此步骤（添加渠道 + 启动网关），再回到飞书开放平台配置事件订阅（[第六步](#第六步-配置事件订阅)）。网关未运行时，长连接设置会保存失败。
+---
 
-## 4. 配对与首次对话
+## 4. 多智能体配置
 
-### 第一步：发送测试消息
+OpenClaw 支持在同一实例下运行**多个独立智能体**，每个智能体有自己的工作区、会话和认证配置。
 
-在飞书中找到你创建的机器人，发送一条消息（如"你好"）。
-
-### 第二步：获取配对码
-
-机器人会回复一个**配对码**（8 位大写字母数字），表示有新用户请求对话。
-
-<!-- TODO: 补充飞书配对流程截图（配对码提示界面） -->
-
-<details>
-<summary>什么是"配对"（Pairing）？</summary>
-
-配对是 OpenClaw 的安全机制——不是任何人给你的机器人发消息都能得到回复。默认情况下，新用户发消息时会收到一个配对码，只有你在终端批准后，该用户才能正常对话。
-
-这防止了陌生人滥用你的 AI 助手（毕竟每次对话都消耗你的模型 API 额度）。
-
-配对码特点：
-- 8 位字符，大写字母和数字，不含易混淆字符（如 0/O、1/I）
-- 1 小时后过期
-- 每个渠道最多 3 个待批准请求
-
-</details>
-
-### 第三步：批准配对
-
-在终端执行：
+### 4.1 添加智能体
 
 ```bash
-openclaw pairing approve feishu <配对码>
+openclaw agents add <name>
 ```
 
-> 把 `<配对码>` 替换成你实际收到的码，例如 `openclaw pairing approve feishu 6KKG7C7K`。
+不带 `--workspace` 参数时会启动交互式向导。
 
-你也可以在 OpenClaw Web 控制面板（`openclaw dashboard`）中点击批准按钮。
+### 4.2 智能体配置项
 
-### 第四步：开始对话
-
-配对成功后，回到飞书再给机器人发一条消息，它就能正常回复了！试试：
-
-```
-你好，请介绍一下你自己
-```
-
-恭喜！你的飞书 AI 助手已经上线。日常使用直接在飞书中和机器人对话即可，无需额外操作。
-
-## 5. 群聊中使用
-
-除了私聊，你还可以把机器人拉进飞书群聊，让团队成员共同使用。
-
-**基本规则**：在群聊中需要 **@机器人** 才会触发回复，避免在群里刷屏。
+| 配置项 | 说明 |
+|--------|------|
+| `agents.list[].name` | 智能体名称 |
+| `agents.list[].workspace` | 工作区路径（默认 `~/.openclaw/workspace-<agentId>`） |
+| `agents.list[].agentDir` | 智能体配置目录 |
 
 <details>
-<summary>群聊访问控制</summary>
+<summary>非交互模式与消息路由</summary>
 
-OpenClaw 通过 `groupPolicy` 控制群聊行为：
+**非交互模式标志**：
+```bash
+openclaw agents add worker-bot \
+  --model "openrouter/stepfun/step-3.5-flash:free" \
+  --agent-dir ~/.openclaw/agents/worker \
+  --bind "telegram:chat:12345" \
+  --non-interactive
+```
 
-| 策略 | 行为 |
-|------|------|
-| `"open"` | 允许所有群聊，仍需 @提及才回复 |
-| `"allowlist"` | 仅允许白名单中的群（默认） |
-| `"disabled"` | 禁用所有群聊消息 |
+**消息路由**：通过 `--bind` 参数将特定渠道/对话绑定到某个智能体。向导也会引导你完成绑定配置。
 
-配置示例：
+这样你可以让不同的龙虾负责不同的聊天群或任务类型。
+
+</details>
+
+---
+
+## 5. 重新配置与维护
+
+### 5.1 重新运行向导
 
 ```bash
-# 允许所有群聊
-openclaw config set channels.feishu.groupPolicy "open"
-
-# 设置某个群不需要@就回复
-openclaw config set channels.feishu.groups.<群ID>.requireMention false
+openclaw configure
 ```
 
-群聊中每个群拥有独立的会话——群里的对话不会影响你和机器人的私聊记录。
+> **与 `openclaw onboard` 的区别**：`configure` 用于修改现有配置，`onboard` 用于首次设置。两者流程类似，但 `configure` 不会重新安装后台服务。
 
-</details>
+### 5.2 重置配置
+
+```bash
+# 默认重置：配置、凭证、会话
+openclaw onboard --reset
+
+# 完整重置：包括工作区
+openclaw onboard --reset --reset-scope full
+```
+
+> ⚠️ `--reset` 会清除现有配置，请谨慎使用。如果只是想修改某项配置，用 `openclaw configure` 更安全。
+
+### 5.3 配置异常处理
+
+如果配置文件损坏或包含过时的字段，向导会提示你先运行诊断：
+
+```bash
+openclaw doctor
+```
+
+`doctor` 命令会自动检测并修复常见问题，包括服务注册、配置格式和凭证有效性。详见[第八章 Doctor 诊断](/cn/adopt/chapter8/)。
 
 <details>
-<summary>私聊访问策略（dmPolicy）</summary>
+<summary>非交互模式（脚本化部署）</summary>
 
-`dmPolicy` 控制谁能通过私聊使用你的机器人：
+在 CI/CD 或批量部署场景中，可以使用非交互模式跳过所有交互式提问：
 
-| 策略 | 行为 |
-|------|------|
-| `"pairing"` | 默认。新用户需配对码批准 |
-| `"allowlist"` | 仅允许 `allowFrom` 列表中的用户 |
-| `"open"` | 允许所有人（需在 `allowFrom` 中设置 `"*"`） |
-| `"disabled"` | 禁用私聊 |
+```bash
+openclaw onboard \
+  --non-interactive \
+  --auth-choice openai-api-key \
+  --install-daemon
+```
+
+注意事项：
+- `--json` 标志**不代表**非交互模式，它只是改变输出格式
+- 非交互模式下必须通过命令行参数或环境变量提供所有必要配置
+- 使用 `--secret-input-mode ref` 时，对应的环境变量必须已设置
 
 </details>
+
+---
 
 ## 6. 常见问题
 
-**Q: 事件订阅保存失败？**
+**Q1：向导配置的文件存在哪里？**
 
-A: 请确保已先运行 `openclaw channels add` 添加飞书渠道，且网关处于运行状态（`openclaw gateway status` 显示正常）。长连接模式要求网关在线才能注册。
+主配置文件在 `~/.openclaw/openclaw.json`，工作区文件在 `~/.openclaw/workspace/`。详见[附录 G：配置文件详解](/cn/appendix/appendix-g)。
 
-**Q: 机器人没有回复？**
+**Q2：跑完向导后最快的方式开始聊天是什么？**
 
-A: 逐步排查：
-1. 网关是否运行：`openclaw status`
-2. 飞书渠道是否已添加：检查 `openclaw.json` 中的 `channels.feishu` 配置
-3. 是否已完成配对：`openclaw pairing list feishu`
-4. 查看实时日志定位错误：`openclaw logs --follow`
-5. 重启网关重试：`openclaw gateway restart`
+直接在终端聊天：
+```bash
+openclaw chat
+```
 
-**Q: 权限审核不通过？**
+或打开浏览器 Dashboard（无需任何渠道配置）：
+```bash
+openclaw dashboard
+```
 
-A: 联系飞书企业管理员审批。个人用户创建的应用通常会自动通过，无需额外审批。
+详见[第十一章 Web 界面与客户端](/cn/adopt/chapter11/)。
 
-**Q: 配置修改后不生效？**
+**Q3：我用的模型提供商不在向导列表里怎么办？**
 
-A: 修改配置后必须重启网关：`openclaw gateway restart`。更多配置项说明见[附录 G：配置文件详解](/cn/appendix/appendix-g)。
+选择 **Custom Provider**，填入提供商的 API 地址和密钥即可。支持 OpenAI 兼容和 Anthropic 兼容两种接口格式。详见[本章第 3 节](#_3-自定义模型提供商-custom-provider)。
 
-**Q: 群聊中 @了机器人但没反应？**
+**Q4：Remote 模式具体做了什么？**
 
-A: 检查 `groupPolicy` 是否为 `"disabled"`；如果是 `"allowlist"`，确认该群的 ID 已加入白名单。
+Remote 模式仅配置本地客户端连接远程 Gateway 的方式（SSH 隧道或 Tailnet 地址），**不会在远程主机上安装或修改任何东西**。远程主机的 Gateway 需要提前配置好。详见[第九章 远程访问与网络](/cn/adopt/chapter9/)。
+
+**Q5：重新运行向导会覆盖我的现有配置吗？**
+
+不会。除非你显式选择 Reset 或传入 `--reset` 参数，向导会保留现有配置，只修改你选择更改的部分。
 
 ---
 
 **下一步**：
-- 配置模型提供商与多模型切换 → [第四章 Models 配置](/cn/adopt/chapter4/)
-- 查看渠道相关命令 → [附录 F 命令速查表](/cn/appendix/appendix-f)
+
+恭喜！领养篇 11 章全部完成 🦞 以下附录可按需查阅：
+
+| 附录 | 内容简介 |
+|------|---------|
+| [附录 A：学习资源汇总](/cn/appendix/appendix-a) | 8 大类学习资源，80+ 精选链接 |
+| [附录 B：社区之声与生态展望](/cn/appendix/appendix-b) | 6 大议题深度讨论 + 金句精选 |
+| [附录 C：类 Claw 方案对比与选型](/cn/appendix/appendix-c) | 桌面客户端 / 托管服务 / 云厂商 / 开源自建 / 移动端 5 大类对比 |
+| [附录 D：技能开发与发布指南](/cn/appendix/appendix-d) | SKILL.md 格式 + skill-creator + ClawHub 发布流程 |
+| [附录 E：模型提供商选型指南](/cn/appendix/appendix-e) | 聚合网关 / 国内 / 国际 / 本地 4 大类系统对比 |
+| [附录 F：命令速查表](/cn/appendix/appendix-f) | 按场景分类的全部 CLI 命令参考 |
+| [附录 G：配置文件详解](/cn/appendix/appendix-g) | openclaw.json 各项参数逐项解读 |
+
+- 想深入了解原理？→ [构建 Claw（开发篇）](/cn/build/)

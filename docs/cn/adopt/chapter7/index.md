@@ -1,1229 +1,559 @@
-# 第七章 Gateway 配置
+# 第七章 工具与定时任务
 
-> 本章介绍 OpenClaw Gateway 的日常运维：启动管理、配置热更新、认证安全、日志监控、心跳机制、沙箱隔离、远程访问和故障排查。读完本章，你将能自信地管理和维护你的 Gateway 服务。
+> 本章介绍 OpenClaw 的工具系统（Tools）——让龙虾从"只会聊天"变成"能干实事"的关键。完成后你将了解如何管理工具权限、使用联网搜索、浏览器自动化和定时任务等核心能力。
 
-> **前置条件**：已完成[第二章 OpenClaw 快速安装](/cn/adopt/chapter2/)，Gateway 已安装并运行。
+> **AutoClaw 用户提示**：[AutoClaw](/cn/adopt/chapter1/) 默认开启 `full` 工具配置档，无需手动配置。本章帮助你理解工具系统的工作方式，以及如何按需调整。
 
-## 0. Gateway 是什么？
+## 0. 什么是 Tools？
 
-Gateway 是 OpenClaw 的核心后台进程——你可以理解为**龙虾的大脑和神经中枢**。它是一个常驻运行的服务，负责：
+OpenClaw 的 AI 能力来自模型提供商（第二章配置的"大脑"），而**工具（Tools）就是龙虾的"双手"**——没有工具，它只能跟你聊天；有了工具，它能搜索网页、操作浏览器、读写文件、执行命令、定时跑任务。
 
-- **连接所有聊天平台**（飞书、QQ、Telegram、Discord 等）
-- **调度 AI 模型**（接收消息 → 调用模型 → 返回回复）
-- **管理会话、记忆、工具**（保持对话上下文连贯）
-- **提供 WebSocket 控制面板**（供 CLI 和 Web UI 连接）
+先厘清两个容易混淆的概念：
 
-一台机器通常只运行一个 Gateway。它默认监听 `ws://127.0.0.1:18789`，仅本机可访问。
+|  | Tools（工具） | Skills（技能） |
+|---|---|---|
+| **是什么** | OpenClaw 内置的底层能力 | 社区或用户编写的高层指令 |
+| **举例** | 执行命令、读写文件、搜索网页 | "每天早上发晨间简报"、"总结网页" |
+| **谁提供** | OpenClaw 核心代码 | ClawHub 技能市场 / 用户自己编写 |
+| **如何管理** | `openclaw.json` 中的 `tools` 配置 | `clawhub` CLI 安装/卸载 |
 
-```
-用户消息 → [飞书/QQ/Telegram] → Gateway → AI 模型 → Gateway → [飞书/QQ/Telegram] → 用户
-                                    ↕
-                              控制面板 / CLI
-```
+简单来说：**Tools 是手脚，Skills 是招式**。技能通过调用工具来完成任务。
 
-## 1. 快速启动（5 分钟上手）
+## 1. 工具配置档（Tool Profiles）
 
-### 启动 Gateway
+Tool Profile 控制龙虾"能做什么"。OpenClaw 提供 4 个档位，从最开放到最受限：
 
-```bash
-# 标准启动
-openclaw gateway --port 18789
+| 配置档 | 能力范围 | 适用场景 |
+|--------|---------|---------|
+| `full` | 无限制，所有工具可用 | **推荐**——个人电脑上的全能助手 |
+| `coding` | 文件读写、命令执行、会话管理、记忆、图片分析 | 开发者专用，不含消息和浏览器 |
+| `messaging` | 消息收发、会话浏览、状态查看 | 纯聊天机器人，不能操作文件或执行命令 |
+| `minimal` | 仅状态查看 | 最小权限，几乎什么都不能做 |
 
-# 带详细日志启动（调试时用）
-openclaw gateway --port 18789 --verbose
-
-# 端口被占用时强制启动
-openclaw gateway --force
-```
-
-### 验证运行状态
+### 查看和修改当前配置档
 
 ```bash
-# 检查 Gateway 状态
-openclaw gateway status
-
-# 检查整体状态
-openclaw status
-
-# 实时查看日志
-openclaw logs --follow
-```
-
-**健康基线**：`openclaw gateway status` 显示 `Runtime: running` 和 `RPC probe: ok` 即为正常。
-
-### 作为系统服务运行（推荐）
-
-生产环境建议把 Gateway 注册为系统服务，开机自启、崩溃自动重启：
-
-```bash
-# 安装为系统服务
-openclaw gateway install
-
-# 管理服务
-openclaw gateway status     # 查看状态
-openclaw gateway restart    # 重启
-openclaw gateway stop       # 停止
-```
-
-- **macOS**：注册为 LaunchAgent（`ai.openclaw.gateway`）
-- **Linux / WSL2**：注册为 systemd 用户服务（`openclaw-gateway.service`）
-
-<details>
-<summary>开发者模式（Dev Profile）</summary>
-
-如果你需要一个独立的开发环境，可以使用 `--dev` 模式：
-
-```bash
-openclaw --dev setup
-openclaw --dev gateway --allow-unconfigured
-openclaw --dev status
-```
-
-Dev 模式使用隔离的状态/配置目录，默认端口 19001，不会影响主 Gateway。
-
-</details>
-
-## 2. 配置管理
-
-OpenClaw 的配置文件是 `~/.openclaw/openclaw.json`（JSON5 格式，支持注释和尾逗号）。如果文件不存在，Gateway 使用安全默认值。
-
-### 编辑方式
-
-| 方式 | 命令 | 说明 |
-|------|------|------|
-| 配置向导 | `openclaw onboard` | 交互式引导，适合新手 |
-| CLI 命令 | `openclaw config set <key> <value>` | 修改单项配置 |
-| Web 控制面板 | `openclaw dashboard` | 可视化编辑 |
-| 直接编辑 | 用编辑器打开 `~/.openclaw/openclaw.json` | 完全控制 |
-
-### 最简配置
-
-```json5
-// ~/.openclaw/openclaw.json
-{
-  agents: { defaults: { workspace: "~/.openclaw/workspace" } },
-  channels: { whatsapp: { allowFrom: ["+15555550123"] } },
-}
-```
-
-### 严格校验
-
-OpenClaw 只接受完全匹配 Schema 的配置。**未知字段、错误类型、非法值都会导致 Gateway 拒绝启动**。
-
-配置出错时：
-1. Gateway 不会启动
-2. 只有诊断命令可用（`openclaw doctor`、`openclaw logs`、`openclaw status`）
-3. 运行 `openclaw doctor` 查看具体问题
-4. 运行 `openclaw doctor --fix` 自动修复
-
-### 配置热更新
-
-修改 `openclaw.json` 后，**大部分设置会自动生效，无需手动重启**。
-
-| 热更新模式 | 行为 |
-|-----------|------|
-| `hybrid`（默认） | 安全变更立即生效，需要重启的变更自动重启 |
-| `hot` | 仅热更新安全变更，需要重启时只打日志警告 |
-| `restart` | 任何变更都触发重启 |
-| `off` | 关闭文件监听，需手动重启 |
-
-```json5
-{
-  gateway: {
-    reload: { mode: "hybrid", debounceMs: 300 },
-  },
-}
-```
-
-**哪些需要重启？** 大部分字段（渠道、模型、工具、会话、自动化等）都可以热更新。只有 `gateway.*`（端口、绑定、认证、TLS）和 `discovery`、`plugins` 等基础设施字段需要重启。
-
-<details>
-<summary>热更新 vs 需要重启的完整对照</summary>
-
-| 类别 | 字段 | 需要重启？ |
-|------|------|-----------|
-| 渠道 | `channels.*`、`web` | 否 |
-| Agent 与模型 | `agent`、`agents`、`models`、`routing` | 否 |
-| 自动化 | `hooks`、`cron`、`agent.heartbeat` | 否 |
-| 会话与消息 | `session`、`messages` | 否 |
-| 工具与媒体 | `tools`、`browser`、`skills`、`audio`、`talk` | 否 |
-| UI 与杂项 | `ui`、`logging`、`identity`、`bindings` | 否 |
-| Gateway 服务器 | `gateway.*`（端口、绑定、认证、TLS、HTTP） | **是** |
-| 基础设施 | `discovery`、`canvasHost`、`plugins` | **是** |
-
-> `gateway.reload` 和 `gateway.remote` 是例外——修改它们不会触发重启。
-
-</details>
-
-<details>
-<summary>环境变量</summary>
-
-OpenClaw 读取环境变量的优先级：
-
-1. 父进程传入的环境变量
-2. 当前工作目录的 `.env` 文件
-3. `~/.openclaw/.env`（全局兜底）
-
-`.env` 文件不会覆盖已有的环境变量。你也可以在配置文件中内联设置：
-
-```json5
-{
-  env: {
-    OPENROUTER_API_KEY: "sk-or-...",
-    vars: { GROQ_API_KEY: "gsk-..." },
-  },
-}
-```
-
-如果 Gateway 运行在 systemd/launchd 下，建议把 API Key 放在 `~/.openclaw/.env` 中，确保守护进程能读取。
-
-</details>
-
-<details>
-<summary>配置 RPC（程序化更新）</summary>
-
-控制面板写操作（`config.apply`、`config.patch`、`update.run`）有速率限制：每 60 秒最多 3 次请求（按 deviceId + clientIp 计算）。超限时返回 `UNAVAILABLE` 和 `retryAfterMs`。
-
-</details>
-
-<details>
-<summary>常用配置模板</summary>
-
-**推荐起步配置**：
-
-```json5
-{
-  identity: {
-    name: "Clawd",
-    theme: "helpful assistant",
-    emoji: "🦞",
-  },
-  agent: {
-    workspace: "~/.openclaw/workspace",
-    model: { primary: "anthropic/claude-sonnet-4-5" },
-  },
-  channels: {
-    whatsapp: {
-      allowFrom: ["+15555550123"],
-      groups: { "*": { requireMention: true } },
-    },
-  },
-}
-```
-
-**多平台配置**：
-
-```json5
-{
-  agent: { workspace: "~/.openclaw/workspace" },
-  channels: {
-    whatsapp: { allowFrom: ["+15555550123"] },
-    telegram: {
-      enabled: true,
-      botToken: "YOUR_TOKEN",
-      allowFrom: ["123456789"],
-    },
-    discord: {
-      enabled: true,
-      token: "YOUR_TOKEN",
-      dm: { allowFrom: ["123456789012345678"] },
-    },
-  },
-}
-```
-
-**纯本地模型**：
-
-```json5
-{
-  agent: {
-    workspace: "~/.openclaw/workspace",
-    model: { primary: "lmstudio/minimax-m2.5-gs32" },
-  },
-  models: {
-    mode: "merge",
-    providers: {
-      lmstudio: {
-        baseUrl: "http://127.0.0.1:1234/v1",
-        apiKey: "lmstudio",
-        api: "openai-responses",
-        models: [
-          {
-            id: "minimax-m2.5-gs32",
-            name: "MiniMax M2.5 GS32",
-            reasoning: false,
-            input: ["text"],
-            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-            contextWindow: 196608,
-            maxTokens: 8192,
-          },
-        ],
-      },
-    },
-  },
-}
-```
-
-更多配置模板见[附录 G 配置文件详解](/cn/appendix/appendix-g)。
-
-</details>
-
-## 3. 认证与安全
-
-### Gateway 认证
-
-Gateway 默认绑定在 `127.0.0.1`（仅本机可访问）。如果需要从外部访问（LAN、Tailnet），**必须配置认证**。
-
-```json5
-{
-  gateway: {
-    port: 18789,
-    bind: "loopback",  // loopback | lan | tailnet | custom
-    auth: {
-      mode: "token",
-      token: "你的网关密码",
-    },
-  },
-}
-```
-
-> **重要**：非 loopback 绑定（lan、tailnet、custom）没有配置认证时，Gateway 会拒绝启动，报错 `refusing to bind gateway ... without auth`。
-
-### 模型提供商认证
-
-模型提供商的 API Key 推荐放在 `~/.openclaw/.env` 中（特别是 systemd/launchd 守护进程场景）：
-
-```bash
-cat >> ~/.openclaw/.env <<'EOF'
-ANTHROPIC_API_KEY=sk-ant-...
-OPENROUTER_API_KEY=sk-or-...
-EOF
-```
-
-然后验证：
-
-```bash
-openclaw models status
-openclaw doctor
-```
-
-<details>
-<summary>密钥管理（SecretRef）</summary>
-
-对于生产环境，OpenClaw 支持 **SecretRef**——不需要把密钥明文写在配置文件中。支持三种来源：
-
-**环境变量引用**：
-```json5
-{ source: "env", provider: "default", id: "OPENAI_API_KEY" }
-```
-
-**文件引用**：
-```json5
-{ source: "file", provider: "filemain", id: "/providers/openai/apiKey" }
-```
-
-**外部命令引用**（支持 1Password、HashiCorp Vault、sops 等）：
-```json5
-{ source: "exec", provider: "vault", id: "providers/openai/apiKey" }
-```
-
-配置密钥提供者：
-
-```json5
-{
-  secrets: {
-    providers: {
-      default: { source: "env" },
-      filemain: {
-        source: "file",
-        path: "~/.openclaw/secrets.json",
-        mode: "json",
-      },
-      vault: {
-        source: "exec",
-        command: "/usr/local/bin/openclaw-vault-resolver",
-        args: ["--profile", "prod"],
-        passEnv: ["PATH", "VAULT_ADDR"],
-      },
-    },
-  },
-}
-```
-
-密钥管理命令：
-
-```bash
-openclaw secrets audit --check    # 检查明文密钥
-openclaw secrets configure        # 交互式配置 SecretRef
-openclaw secrets reload           # 刷新密钥快照
-```
-
-SecretRef 解析是**启动时一次性完成**的（不是每次请求时），解析失败会阻止 Gateway 启动。运行时使用内存中的快照，避免密钥提供者故障影响请求路径。
-
-**1Password 集成示例**：
-
-```json5
-{
-  secrets: {
-    providers: {
-      onepassword_openai: {
-        source: "exec",
-        command: "/opt/homebrew/bin/op",
-        allowSymlinkCommand: true,
-        trustedDirs: ["/opt/homebrew"],
-        args: ["read", "op://Personal/OpenClaw QA API Key/password"],
-        passEnv: ["HOME"],
-        jsonOnly: false,
-      },
-    },
-  },
-  models: {
-    providers: {
-      openai: {
-        baseUrl: "https://api.openai.com/v1",
-        models: [{ id: "gpt-5", name: "gpt-5" }],
-        apiKey: { source: "exec", provider: "onepassword_openai", id: "value" },
-      },
-    },
-  },
-}
-```
-
-</details>
-
-<details>
-<summary>反向代理认证（Trusted Proxy）</summary>
-
-如果 OpenClaw 运行在身份感知代理（Pomerium、Caddy + OAuth、nginx + oauth2-proxy）后面，可以使用 `trusted-proxy` 模式：
-
-```json5
-{
-  gateway: {
-    bind: "loopback",
-    trustedProxies: ["10.0.0.1"],
-    auth: {
-      mode: "trusted-proxy",
-      trustedProxy: {
-        userHeader: "x-forwarded-user",
-        allowUsers: ["nick@example.com"],
-      },
-    },
-  },
-}
-```
-
-**nginx + oauth2-proxy 示例**：
-
-```nginx
-location / {
-    auth_request /oauth2/auth;
-    auth_request_set $user $upstream_http_x_auth_request_email;
-
-    proxy_pass http://openclaw:18789;
-    proxy_set_header X-Auth-Request-Email $user;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-}
-```
-
-> **安全警告**：此模式将认证完全委托给代理。必须确保：代理是唯一入口、`trustedProxies` 最小化、代理会覆盖（而非追加）转发头。启用后 `openclaw security audit` 会标记为 critical——这是故意的提醒。
-
-</details>
-
-<details>
-<summary>安全审计与安全模型</summary>
-
-定期运行安全审计（特别是修改配置或暴露网络后）：
-
-```bash
-openclaw security audit           # 基本审计
-openclaw security audit --deep    # 深度审计
-openclaw security audit --fix     # 自动修复
-```
-
-它会检查：Gateway 认证暴露、浏览器控制暴露、提权 allowlist、文件权限等常见问题。
-
-**核心安全原则**：OpenClaw 采用**个人助理信任模型**——每个 Gateway 一个可信操作者。它不是敌对多租户安全边界。如果需要多用户隔离，应分开 Gateway + 凭证（最好分开操作系统用户/主机）。
-
-</details>
-
-## 4. 日志与健康检查
-
-### 日志系统
-
-OpenClaw 有两个日志输出面：
-
-| 输出 | 说明 | 控制方式 |
-|------|------|---------|
-| **控制台** | 终端 / Debug UI 看到的内容 | `logging.consoleLevel`、`logging.consoleStyle` |
-| **文件日志** | JSON Lines 格式，每天一个文件 | `logging.level`、`logging.file` |
-
-默认日志文件在 `/tmp/openclaw/openclaw-YYYY-MM-DD.log`。
-
-```bash
-# 实时查看日志
-openclaw logs --follow
-
-# 最近 100 条
-openclaw logs --limit 100
-
-# JSON 格式输出
-openclaw logs --limit 100 --json
-```
-
-```json5
-// 日志配置示例
-{
-  logging: {
-    level: "info",          // 文件日志级别
-    consoleLevel: "info",   // 控制台日志级别
-    consoleStyle: "pretty", // pretty | compact | json
-    redactSensitive: "tools", // 工具摘要中脱敏
-  },
-}
-```
-
-> **提示**：`--verbose` 只影响控制台输出，不影响文件日志级别。要在文件日志中捕获详细信息，请设置 `logging.level` 为 `debug` 或 `trace`。
-
-### 健康检查
-
-```bash
-# 本地摘要（Gateway 状态、渠道认证、会话活动）
-openclaw status
-
-# 完整本地诊断（安全可粘贴分享）
-openclaw status --all
-
-# 深度检查（含 Gateway 渠道探测）
-openclaw status --deep
-
-# Gateway 健康快照（JSON 格式）
-openclaw health --json
-```
-
-**WhatsApp / WebChat 小技巧**：发送 `/status` 作为独立消息可获取状态回复，不会触发 Agent。
-
-### Doctor 自动诊断
-
-`openclaw doctor` 是 OpenClaw 的**全能维修工具**——自动检测配置错误、迁移遗留数据、修复常见问题。
-
-```bash
-openclaw doctor              # 交互式诊断
-openclaw doctor --yes        # 自动接受默认修复
-openclaw doctor --repair     # 应用推荐修复
-openclaw doctor --deep       # 扫描多余的 Gateway 安装
-```
-
-Doctor 会检查的项目包括：
-
-- 配置格式规范化和遗留字段迁移
-- 模型认证健康（OAuth 过期检测、令牌刷新）
-- 状态目录完整性（会话、凭证、权限）
-- 系统服务配置（launchd/systemd）
-- 端口冲突诊断
-- 安全警告（开放 DM 策略等）
-- 沙箱镜像检查
-
-<details>
-<summary>Doctor 检查项完整列表</summary>
-
-1. **可选更新**（git 安装时可选拉取最新代码）
-2. **UI 协议刷新**（Protocol Schema 更新时重建控制面板 UI）
-3. **健康检查 + 重启提示**
-4. **技能状态摘要**（可用/缺失/阻塞）
-5. **配置规范化**（遗留值格式迁移）
-6. **OpenCode 提供商覆盖警告**
-7. **遗留磁盘布局迁移**（会话、Agent 目录、WhatsApp 认证）
-8. **遗留 Cron 存储迁移**
-9. **状态完整性检查**（目录缺失、权限、云同步警告）
-10. **模型认证健康**（OAuth 过期、冷却/禁用状态）
-11. **Hooks 模型验证**
-12. **沙箱镜像修复**
-13. **Gateway 服务迁移和清理**
-14. **安全警告**
-15. **systemd linger 检查**（Linux）
-16. **技能状态**
-17. **Gateway 认证检查**
-18. **运行时与端口诊断**
-19. **运行时最佳实践**（Node vs Bun 检查）
-
-</details>
-
-## 5. Heartbeat 心跳机制
-
-Heartbeat（心跳）让龙虾定时"醒来"检查是否有需要关注的事情——不是被动等消息，而是主动巡逻。
-
-### 快速启用
-
-```json5
-{
-  agents: {
-    defaults: {
-      heartbeat: {
-        every: "30m",          // 每 30 分钟一次
-        target: "last",        // 发送到最近联系的渠道
-        // activeHours: { start: "08:00", end: "24:00" },  // 可选：限制活跃时段
-      },
-    },
-  },
-}
-```
-
-### 工作原理
-
-1. 每隔设定间隔，Gateway 触发一次 Agent 对话轮
-2. Agent 读取工作区中的 `HEARTBEAT.md`（可选的心跳检查清单）
-3. 如果没什么需要关注的，Agent 回复 `HEARTBEAT_OK`（会被静默吞掉）
-4. 如果有重要事项，Agent 发送提醒消息到你指定的渠道
-
-### HEARTBEAT.md 示例
-
-在工作区创建 `~/.openclaw/workspace/HEARTBEAT.md`：
-
-```markdown
-# 心跳检查清单
-
-- 快速扫描：收件箱有紧急邮件吗？
-- 白天时段，如果没有待办，做一次简单问候
-- 如果某个任务被阻塞，记下缺什么并在下次对话时提醒我
-```
-
-> **省钱提示**：心跳会运行完整的 Agent 对话轮，间隔越短越烧 Token。保持 `HEARTBEAT.md` 简短，考虑使用更便宜的模型或设置 `target: "none"`（只内部运行，不发送消息）。
-
-<details>
-<summary>心跳高级配置</summary>
-
-**活跃时段**（避免深夜打扰）：
-
-```json5
-{
-  agents: {
-    defaults: {
-      heartbeat: {
-        every: "30m",
-        target: "last",
-        activeHours: {
-          start: "09:00",
-          end: "22:00",
-          timezone: "Asia/Shanghai",
-        },
-      },
-    },
-  },
-}
-```
-
-**多 Agent 独立心跳**：
-
-```json5
-{
-  agents: {
-    defaults: {
-      heartbeat: { every: "30m", target: "last" },
-    },
-    list: [
-      { id: "main", default: true },
-      {
-        id: "ops",
-        heartbeat: {
-          every: "1h",
-          target: "telegram",
-          to: "12345678",
-          prompt: "检查服务器状态，如果一切正常回复 HEARTBEAT_OK。",
-        },
-      },
-    ],
-  },
-}
-```
-
-**可见性控制**（按渠道定制）：
-
-- `showOk: false`（默认）：静默吞掉 `HEARTBEAT_OK`
-- `showAlerts: true`（默认）：发送告警内容
-- `useIndicator: true`（默认）：发出指示器事件
-
-**手动触发心跳**：
-
-```bash
-openclaw system event --text "检查紧急跟进事项" --mode now
-```
-
-**轻量上下文模式**：
-
-设置 `lightContext: true` 让心跳只注入 `HEARTBEAT.md`，减少上下文大小和 Token 消耗。
-
-**推理过程透传**：
-
-设置 `includeReasoning: true` 额外发送 `Reasoning:` 前缀的推理过程消息，方便了解龙虾为什么决定通知你。建议在群聊中关闭此选项。
-
-</details>
-
-## 6. 沙箱与工具策略
-
-OpenClaw 有三层安全控制，理解它们的区别很重要：
-
-| 控制层 | 作用 | 配置位置 |
-|--------|------|---------|
-| **沙箱（Sandbox）** | 决定工具**在哪里**运行（Docker 容器 vs 宿主机） | `agents.defaults.sandbox.*` |
-| **工具策略（Tool Policy）** | 决定**哪些工具**可用 | `tools.allow` / `tools.deny` |
-| **提权（Elevated）** | `exec` 工具的宿主机逃逸口 | `tools.elevated.*` |
-
-### 沙箱模式
-
-```json5
-{
-  agents: {
-    defaults: {
-      sandbox: {
-        mode: "non-main",   // off | non-main | all
-        scope: "session",   // session | agent | shared
-        workspaceAccess: "none", // none | ro | rw
-      },
-    },
-  },
-}
-```
-
-- **`off`**：不使用沙箱，工具在宿主机运行
-- **`non-main`**：仅非主会话使用沙箱（群聊/渠道会话会被沙箱化）
-- **`all`**：所有会话都使用沙箱
-
-### 工具策略
-
-```json5
-{
-  tools: {
-    allow: ["exec", "read", "write", "edit"],  // 允许的工具
-    deny: ["browser", "canvas"],                // 禁止的工具
-  },
-}
-```
-
-> **规则**：`deny` 总是优先。如果 `allow` 非空，其他所有工具视为禁止。工具策略是硬性限制——被禁止的工具无法通过沙箱或提权恢复。
-
-### 快速调试
-
-```bash
-openclaw sandbox explain                          # 查看当前有效配置
-openclaw sandbox explain --session agent:main:main # 指定会话
-```
-
-<details>
-<summary>工具分组（快捷写法）</summary>
-
-工具策略支持 `group:*` 分组写法：
-
-```json5
-{
-  tools: {
-    sandbox: {
-      tools: {
-        allow: ["group:runtime", "group:fs", "group:sessions", "group:memory"],
-      },
-    },
-  },
-}
-```
-
-可用分组：
-
-| 分组 | 包含工具 |
-|------|---------|
-| `group:runtime` | exec, bash, process |
-| `group:fs` | read, write, edit, apply_patch |
-| `group:sessions` | sessions_list, sessions_history 等 |
-| `group:memory` | memory_search, memory_get |
-| `group:ui` | browser, canvas |
-| `group:automation` | cron, gateway |
-| `group:messaging` | message |
-| `group:openclaw` | 所有内置工具（不含插件工具） |
-
-</details>
-
-<details>
-<summary>沙箱 Docker 镜像与设置</summary>
-
-默认镜像：`openclaw-sandbox:bookworm-slim`
-
-```bash
-# 构建基础沙箱镜像
-scripts/sandbox-setup.sh
-
-# 构建功能更全的镜像（含 curl、jq、nodejs、python3、git）
-scripts/sandbox-common-setup.sh
-
-# 构建沙箱浏览器镜像
-scripts/sandbox-browser-setup.sh
-```
-
-默认沙箱容器**没有网络**访问。如需网络，设置 `agents.defaults.sandbox.docker.network`。
-
-**自定义绑定挂载**：
-
-```json5
-{
-  agents: {
-    defaults: {
-      sandbox: {
-        docker: {
-          binds: ["/home/user/source:/source:ro", "/var/data/myapp:/data:ro"],
-        },
-      },
-    },
-  },
-}
-```
-
-> **安全注意**：绑定挂载会穿透沙箱文件系统。OpenClaw 会阻止危险的绑定源（如 `docker.sock`、`/etc`、`/proc`、`/sys`）。敏感挂载建议使用 `:ro`。
-
-**容器内一次性初始化**（`setupCommand`）：
-
-```json5
-{
-  agents: {
-    defaults: {
-      sandbox: {
-        docker: {
-          setupCommand: "apt-get update && apt-get install -y curl jq",
-          network: "bridge",        // 安装包需要网络
-          readOnlyRoot: false,      // 安装包需要写权限
-          user: "0:0",             // 安装包需要 root
-        },
-      },
-    },
-  },
-}
-```
-
-</details>
-
-## 7. 远程访问与网络
-
-### 网络模型
-
-Gateway 默认只监听本机回环地址（`127.0.0.1:18789`）。远程访问有三种方式：
-
-| 方式 | 适用场景 | 推荐度 |
-|------|---------|--------|
-| **Tailscale / VPN** | 跨网络安全访问 | 推荐 |
-| **SSH 隧道** | 任何有 SSH 的环境 | 通用兜底 |
-| **LAN 绑定** | 局域网内访问 | 需配合认证 |
-
-### SSH 隧道（最简单）
-
-```bash
-ssh -N -L 18789:127.0.0.1:18789 user@远程主机
-```
-
-然后本地客户端连接 `ws://127.0.0.1:18789`。即使通过 SSH 隧道，配置了认证的 Gateway 仍然要求客户端发送 token/password。
-
-### Tailscale 绑定
-
-```json5
-{
-  gateway: {
-    bind: "tailnet",
-    auth: {
-      mode: "token",
-      token: "你的网关密码",
-    },
-    tailscale: { mode: "serve" },
-  },
-}
-```
-
-<details>
-<summary>LAN 发现（Bonjour / mDNS）</summary>
-
-Gateway 可以通过 Bonjour 在局域网内广播自己的 WebSocket 端点，方便客户端自动发现：
-
-- 服务类型：`_openclaw-gw._tcp`
-- TXT 记录包含端口、TLS 状态、Tailnet DNS 等提示信息
-
-**Bonjour 限制**：仅限同一局域网，不跨网络。跨网络请使用 Tailscale 或 SSH。
-
-调试命令（macOS）：
-
-```bash
-dns-sd -B _openclaw-gw._tcp local.    # 浏览实例
-dns-sd -L "<实例名>" _openclaw-gw._tcp local.  # 解析详情
-```
-
-**跨网络 Bonjour（Wide-Area DNS-SD over Tailscale）**：
-
-如果节点和 Gateway 在不同网络，可以通过 Tailscale 配合 unicast DNS-SD 实现跨网络发现：
-
-```json5
-{
-  gateway: { bind: "tailnet" },
-  discovery: { wideArea: { enabled: true } },
-}
-```
-
-一次性 DNS 服务器设置：`openclaw dns setup --apply`
-
-禁用广播：设置环境变量 `OPENCLAW_DISABLE_BONJOUR=1`。
-
-</details>
-
-<details>
-<summary>多 Gateway 运行（高级）</summary>
-
-大多数场景只需一个 Gateway。如果需要严格隔离或冗余（比如救援 Bot），可以运行多个 Gateway。
-
-**每个实例必须唯一的配置**：
-
-- `gateway.port`（或 `--port`）
-- `OPENCLAW_CONFIG_PATH`
-- `OPENCLAW_STATE_DIR`
-- `agents.defaults.workspace`
-
-**推荐使用 Profile 隔离**：
-
-```bash
-# 主 Gateway
-openclaw --profile main gateway --port 18789
-
-# 救援 Gateway
-openclaw --profile rescue gateway --port 19001
-
-# 分别安装为系统服务
-openclaw --profile main gateway install
-openclaw --profile rescue gateway install
-
-# 分别检查状态
-openclaw --profile main status
-openclaw --profile rescue status
-```
-
-端口间距建议：至少间隔 20 个端口，避免派生端口（浏览器 CDP 等）冲突。
-
-</details>
-
-<details>
-<summary>Gateway 锁机制</summary>
-
-Gateway 使用 TCP 端口绑定作为锁——同一端口只能运行一个实例。
-
-- 如果端口被占用，启动时抛出 `GatewayLockError`
-- 进程退出（包括崩溃和 SIGKILL）时，操作系统自动释放端口
-- 不需要额外的锁文件或清理步骤
-
-如果端口被其他进程占用，使用 `openclaw gateway --port <其他端口>` 或 `--force` 强制释放。
-
-</details>
-
-## 8. HTTP API 端点
-
-Gateway 除了 WebSocket 控制面板，还可以提供 HTTP API 端点。这些端点**默认关闭**，需要手动启用。
-
-### OpenAI Chat Completions 兼容端点
-
-```json5
-{
-  gateway: {
-    http: {
-      endpoints: {
-        chatCompletions: { enabled: true },
-      },
-    },
-  },
-}
-```
-
-启用后可以像调用 OpenAI API 一样调用你的龙虾：
-
-```bash
-curl -sS http://127.0.0.1:18789/v1/chat/completions \
-  -H 'Authorization: Bearer 你的网关密码' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "openclaw:main",
-    "messages": [{"role":"user","content":"你好"}]
-  }'
-```
-
-### OpenResponses 兼容端点
-
-```json5
-{
-  gateway: {
-    http: {
-      endpoints: {
-        responses: { enabled: true },
-      },
-    },
-  },
-}
-```
-
-```bash
-curl -sS http://127.0.0.1:18789/v1/responses \
-  -H 'Authorization: Bearer 你的网关密码' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "openclaw:main",
-    "input": "你好"
-  }'
-```
-
-### Tools Invoke 端点
-
-这个端点**默认开启**，用于直接调用单个工具：
-
-```bash
-curl -sS http://127.0.0.1:18789/tools/invoke \
-  -H 'Authorization: Bearer 你的网关密码' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "tool": "sessions_list",
-    "action": "json",
-    "args": {}
-  }'
-```
-
-> **安全警告**：这些 HTTP 端点等同于完全的操作者权限。有效的 Gateway 认证令牌 = 操作者凭证。**不要将这些端点暴露在公网上**，仅限 loopback / Tailnet / 私有网络使用。
-
-<details>
-<summary>流式输出（SSE）</summary>
-
-Chat Completions 和 Responses 端点都支持流式输出：
-
-```bash
-curl -N http://127.0.0.1:18789/v1/chat/completions \
-  -H 'Authorization: Bearer 你的网关密码' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "openclaw:main",
-    "stream": true,
-    "messages": [{"role":"user","content":"你好"}]
-  }'
-```
-
-流式输出使用 Server-Sent Events（SSE），`Content-Type: text/event-stream`，以 `data: [DONE]` 结束。
-
-</details>
-
-<details>
-<summary>Agent 选择与会话路由</summary>
-
-通过 `model` 字段选择 Agent：
-
-- `model: "openclaw:main"` — 主 Agent
-- `model: "openclaw:beta"` — beta Agent
-- `model: "agent:ops"` — ops Agent
-
-或通过 Header：
-
-- `x-openclaw-agent-id: main`
-- `x-openclaw-session-key: <sessionKey>`（完全控制会话路由）
-
-默认情况下端点是无状态的（每次请求新建会话）。如果请求包含 `user` 字段，Gateway 会派生稳定的 session key，使同一用户的多次调用共享上下文。
-
-</details>
-
-<details>
-<summary>CLI Backends（本地 AI CLI 备用通道）</summary>
-
-OpenClaw 可以使用本地 AI CLI（如 Claude Code、Codex CLI）作为 API 提供商故障时的文本备用通道：
-
-```bash
-# 直接使用 Claude CLI
-openclaw agent --message "hi" --model claude-cli/opus-4.6
-
-# 使用 Codex CLI
-openclaw agent --message "hi" --model codex-cli/gpt-5.4
-```
-
-作为 fallback 配置：
-
-```json5
-{
-  agents: {
-    defaults: {
-      model: {
-        primary: "anthropic/claude-opus-4-6",
-        fallbacks: ["claude-cli/opus-4.6"],
-      },
-    },
-  },
-}
-```
-
-**限制**：CLI Backend 模式下没有 OpenClaw 工具调用（仅文本输入/输出），不支持流式输出，但支持会话上下文和图片传递。
-
-</details>
-
-## 9. 后台命令执行
-
-Gateway 通过 `exec` 工具运行 Shell 命令，`process` 工具管理后台任务。
-
-### exec 工具
-
-| 参数 | 说明 |
-|------|------|
-| `command` | 要执行的命令（必填） |
-| `background` | 立即后台执行 |
-| `timeout` | 超时秒数，默认 1800（30 分钟） |
-| `yieldMs` | 自动后台化延迟，默认 10000ms |
-| `elevated` | 在宿主机运行（沙箱模式下） |
-
-- 前台命令直接返回输出
-- 后台命令返回 `sessionId`，后续用 `process` 工具查询
-
-### process 工具
-
-| 操作 | 说明 |
-|------|------|
-| `list` | 列出运行中和已完成的后台任务 |
-| `poll` | 读取新输出（含退出状态） |
-| `log` | 读取完整输出日志（支持 offset + limit） |
-| `write` | 发送 stdin 输入 |
-| `kill` | 终止后台任务 |
-| `clear` | 清除已完成任务的内存记录 |
-
-```json5
-// 相关配置
-{
-  tools: {
-    exec: {
-      backgroundMs: 10000,   // 自动后台化延迟（毫秒）
-      timeoutSec: 1800,      // 超时（秒）
-      cleanupMs: 1800000,    // 完成后清理延迟（毫秒）
-      notifyOnExit: true,    // 后台任务退出时触发心跳通知
-    },
-  },
-}
-```
-
-> **注意**：后台任务在进程重启时会丢失（不持久化到磁盘）。
-
-## 10. 故障排查
-
-### 标准诊断流程
-
-遇到问题时，按顺序运行：
-
-```bash
-openclaw status                    # 1. 总体状态
-openclaw gateway status            # 2. Gateway 状态
-openclaw logs --follow             # 3. 实时日志
-openclaw doctor                    # 4. 自动诊断
-openclaw channels status --probe   # 5. 渠道探测
-```
-
-### 常见问题速查
-
-**Gateway 拒绝启动**：
-
-| 报错 | 原因 | 解决 |
-|------|------|------|
-| `refusing to bind gateway ... without auth` | 非 loopback 绑定但未配置认证 | 配置 `gateway.auth.token` |
-| `another gateway instance is already listening` / `EADDRINUSE` | 端口被占用 | 换端口或 `--force` |
-| `Gateway start blocked: set gateway.mode=local` | 配置了 remote 模式 | 设置 `gateway.mode="local"` |
-
-**没有回复**：
-
-| 现象 | 检查项 |
-|------|--------|
-| 渠道已连接但无回复 | DM 策略（pairing / allowlist）、群聊提及规则（requireMention） |
-| 配对待审批 | `openclaw pairing list --channel <渠道>` |
-| 消息被策略过滤 | 日志中搜索 `blocked`、`pairing request`、`mention required` |
-
-**控制面板无法连接**：
-
-| 报错 | 解决 |
-|------|------|
-| `device identity required` | 非安全上下文或缺少设备认证 |
-| `unauthorized` | 认证令牌不匹配，检查 `gateway.auth.token` |
-| `gateway connect failed` | 检查 URL/端口是否正确 |
-
-**心跳 / Cron 不工作**：
-
-```bash
-openclaw cron list                        # 查看 Cron 任务
-openclaw cron runs --id <jobId> --limit 20  # 查看执行历史
-openclaw system heartbeat last            # 上次心跳信息
-```
-
-常见原因：Cron 未启用、活跃时段外被跳过、DM 策略阻止投递（`directPolicy: "block"`）。
-
-<details>
-<summary>升级后出现问题</summary>
-
-升级后大多数问题是配置漂移或更严格的默认值被强制执行：
-
-1. **认证和 URL 行为变化**
-   - `gateway.mode=remote` 时 CLI 可能指向远程
-   - 检查 `openclaw config get gateway.mode` 和 `gateway.auth.mode`
-
-2. **绑定和认证规则更严格**
-   - 非 loopback 绑定现在必须配置认证
-   - `gateway.token`（旧）不等于 `gateway.auth.token`（新）
-
-3. **配对和设备身份状态变化**
-   - 检查 `openclaw devices list` 和 `openclaw pairing list`
-
-如果服务配置和运行时不一致，重新安装服务元数据：
-
-```bash
-openclaw gateway install --force
+# 查看当前配置
+openclaw config get tools.profile
+
+# 设置为 full（推荐）
+openclaw config set tools.profile full
 openclaw gateway restart
 ```
 
+> **第二章遗留问题**：OpenClaw 3.7 之前的版本默认配置档可能是 `messaging`，导致龙虾"只会说不会做"。如果你发现龙虾只给建议却不执行操作，运行上面的命令切换到 `full`。
+
+::: danger full 模式安全提示
+`full` 模式意味着 OpenClaw 可以在你的电脑上执行任意命令、读写任意文件。个人电脑上使用是安全的（OpenClaw 执行每个操作前都会请求确认），但**不要在生产服务器上使用 `full` 模式**。如果只需要聊天功能（如给家人使用），设为 `messaging` 即可。
+:::
+
+<details>
+<summary>为特定 Agent 单独设置配置档</summary>
+
+如果你运行多个 Agent（如一个全能助手 + 一个客服机器人），可以为每个 Agent 设置不同的配置档：
+
+```json
+{
+  "tools": { "profile": "full" },
+  "agents": {
+    "list": [
+      {
+        "id": "support",
+        "tools": { "profile": "messaging", "allow": ["slack"] }
+      }
+    ]
+  }
+}
+```
+
+上面的配置让默认 Agent 拥有全部工具，而 `support` Agent 只能收发消息和使用 Slack。
+
 </details>
 
 <details>
-<summary>浏览器工具故障</summary>
+<summary>在配置文件中手动设置</summary>
 
-```bash
-openclaw browser status
-openclaw browser start --browser-profile openclaw
-openclaw browser profiles
-openclaw doctor
+编辑 `~/.openclaw/openclaw.json`（Windows：`C:\Users\你的用户名\.openclaw\openclaw.json`）：
+
+```json
+{
+  "tools": {
+    "profile": "full"
+  }
+}
 ```
 
-常见问题：
-- `Failed to start Chrome CDP on port` — 浏览器进程启动失败
-- `browser.executablePath not found` — 配置的路径无效
-- `Chrome extension relay is running, but no tab is connected` — 扩展 relay 未连接
+修改后运行 `openclaw gateway restart` 生效。
 
 </details>
 
-## 11. 常见问题
+## 2. 内置工具一览
 
-**Q: Gateway 端口和绑定的优先级是什么？**
+OpenClaw 内置了丰富的工具，按功能分为以下几类：
 
-A: 端口：`--port` > `OPENCLAW_GATEWAY_PORT` > `gateway.port` > `18789`。绑定：CLI 覆盖 > `gateway.bind` > `loopback`。
+| 分类 | 工具 | 说明 |
+|------|------|------|
+| **文件操作** | `read` `write` `edit` `apply_patch` | 读写文件，批量打补丁 |
+| **命令执行** | `exec` `process` | 运行 Shell 命令、管理后台进程 |
+| **网页** | `web_search` `web_fetch` | 搜索引擎查询、抓取网页内容 |
+| **浏览器** | `browser` | 完整的浏览器自动化（点击、输入、截图） |
+| **消息** | `message` | 跨渠道收发消息（飞书/QQ/Telegram 等） |
+| **定时任务** | `cron` | 创建和管理定时 / 周期性任务 |
+| **画布** | `canvas` | 驱动配套 App 的画布功能 |
+| **设备** | `nodes` | 发现配套设备、拍照、录屏、获取位置 |
+| **图片/PDF** | `image` `pdf` | 分析图片内容、解析 PDF 文档 |
+| **网关** | `gateway` | 重启网关、查看和修改配置 |
+| **会话** | `sessions_*` `agents_list` | 管理对话会话、生成子 Agent |
 
-**Q: 配置写错了 Gateway 不启动怎么办？**
+> 你不需要逐个记住这些工具——龙虾会根据你的指令自动选择合适的工具。你只需确保对应的工具已启用（配置档为 `full` 时全部可用）。
 
-A: 运行 `openclaw doctor`，它会告诉你具体哪里出错。`openclaw doctor --fix` 可以自动修复大部分问题。也可以直接用编辑器打开 `~/.openclaw/openclaw.json` 手动修改。
+<details>
+<summary>工具组（快捷分组）速查表</summary>
 
-**Q: 如何在本地模型和云端模型之间切换？**
+OpenClaw 提供预定义的工具组，方便在配置中批量引用：
 
-A: 使用 `models.mode: "merge"` 同时配置本地和云端提供商，通过 `model.primary` 和 `model.fallbacks` 设置优先级。本地模型挂掉时自动切换到云端。详见[第四章 Models 配置](/cn/adopt/chapter4/)。
+| 工具组 | 包含的工具 |
+|--------|-----------|
+| `group:fs` | read, write, edit, apply_patch |
+| `group:runtime` | exec, bash, process |
+| `group:web` | web_search, web_fetch |
+| `group:ui` | browser, canvas |
+| `group:sessions` | sessions_list / history / send / spawn, session_status |
+| `group:memory` | memory_search, memory_get |
+| `group:automation` | cron, gateway |
+| `group:messaging` | message |
+| `group:nodes` | nodes |
+| `group:openclaw` | 所有内置工具（不含插件） |
 
-**Q: 心跳太频繁会不会很费钱？**
+在后续的权限管理中会用到这些组名。
 
-A: 会。每次心跳都是完整的 Agent 对话轮。建议：使用较长间隔（如 `1h`）、保持 `HEARTBEAT.md` 简短、考虑使用便宜的模型（`heartbeat.model`）、或设置 `target: "none"` 只做内部检查不发送消息。
+</details>
 
-**Q: 沙箱和提权（Elevated）是什么关系？**
+## 3. 联网搜索
 
-A: 沙箱决定工具在哪里运行（Docker 容器 vs 宿主机）。提权是沙箱的"逃逸口"——当你在沙箱中但需要在宿主机执行命令时使用。`openclaw sandbox explain` 可以查看当前生效的策略。
+联网搜索让龙虾可以查询实时信息，而不仅仅依赖训练数据中的旧知识。
 
-**Q: 多个人同时使用一个 Gateway 安全吗？**
+### 3.1 支持的搜索引擎
 
-A: OpenClaw 设计为**单用户个人助理模型**，不是多租户系统。如果多人使用，他们共享同一个工具授权。需要隔离时，应该运行独立的 Gateway 实例。
+| 搜索引擎 | 说明 |
+|---------|------|
+| **Brave** | 隐私友好，免费额度充足，推荐入门使用 |
+| **Perplexity** | AI 增强搜索，结果质量高 |
+| **Kimi** | 国内可用，中文搜索优化 |
+| **Gemini** | Google 搜索能力 |
+| **Grok** | xAI 提供的搜索 |
 
-**Q: HTTP API 端点和直接聊天有什么区别？**
+### 3.2 配置搜索
 
-A: HTTP 端点（Chat Completions / Responses）走的是同一个 Agent 代码路径，但认证方式不同（Bearer token 而非 WebSocket 握手）。它们适合集成到其他应用或自动化脚本中。注意：HTTP 端点的认证等同于操作者权限，不要暴露在公网。
+最简单的方式是通过配置向导：
+
+```bash
+openclaw configure --section web
+```
+
+向导会引导你选择搜索引擎并填写 API Key。
+
+<details>
+<summary>手动编辑配置文件</summary>
+
+编辑 `~/.openclaw/openclaw.json`：
+
+```json
+{
+  "tools": {
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "brave",
+        "maxResults": 5
+      },
+      "fetch": {
+        "enabled": true,
+        "maxCharsCap": 50000
+      }
+    }
+  },
+  "env": {
+    "BRAVE_API_KEY": "你的 Brave API Key"
+  }
+}
+```
+
+修改后运行 `openclaw gateway restart` 生效。
+
+> 搜索结果默认缓存 15 分钟，避免重复请求浪费 API 额度。
+
+</details>
+
+### 3.3 使用示例
+
+配置完成后，直接在对话中提问即可——龙虾会自动判断是否需要联网：
+
+```
+今天有什么科技新闻？
+```
+
+```
+帮我搜索"OpenClaw 最新版本"的更新内容
+```
+
+龙虾会自动调用 `web_search` 查询，并将搜索结果整合到回答中。
+
+> **网页抓取**：除了搜索，`web_fetch` 工具可以从指定 URL 抓取网页内容并转为文字。对于 JavaScript 渲染的动态网页（如单页应用），建议使用下一节介绍的浏览器工具。
+
+## 4. 浏览器自动化
+
+浏览器工具让龙虾可以像人一样操作网页——打开页面、点击按钮、填写表单、截取屏幕。
+
+### 4.1 启用浏览器
+
+浏览器工具默认已启用（`browser.enabled: true`）。确认状态：
+
+```bash
+openclaw config get browser.enabled
+```
+
+如果返回 `false`，手动启用：
+
+```bash
+openclaw config set browser.enabled true
+openclaw gateway restart
+```
+
+> **前提**：系统需要安装 Chrome 或 Chromium 浏览器。大多数电脑已经预装了 Chrome。
+
+### 4.2 使用示例
+
+在对话中直接告诉龙虾你想做什么：
+
+```
+帮我打开百度搜索"今日天气"，截图给我看
+```
+
+```
+打开 https://example.com ，找到登录按钮并点击
+```
+
+龙虾会自动完成以下流程：
+
+1. **启动浏览器** → 打开一个受控的 Chrome 实例
+2. **打开网页** → 导航到目标 URL
+3. **获取页面快照** → 识别页面上所有可操作的元素
+4. **执行操作** → 点击、输入、选择等
+5. **截图确认** → 把结果截图发给你
+
+<details>
+<summary>浏览器支持的操作</summary>
+
+| 操作 | 说明 |
+|------|------|
+| `status` | 查看浏览器是否运行 |
+| `start` / `stop` | 启动 / 关闭浏览器 |
+| `open` | 打开指定 URL |
+| `tabs` / `focus` / `close` | 标签页管理 |
+| `snapshot` | 获取页面快照（识别可操作元素） |
+| `screenshot` | 截取当前页面图片 |
+| `act` | 交互操作：click / type / press / hover / drag / fill / resize / wait |
+| `navigate` | 前进 / 后退 / 刷新 |
+| `console` | 查看浏览器控制台日志 |
+| `pdf` | 将当前页面导出为 PDF |
+| `upload` | 上传文件 |
+
+> `snapshot` 有两种模式：`ai`（默认，使用 Playwright 分析页面结构）和 `aria`（返回无障碍树）。`act` 操作需要引用 `snapshot` 返回的元素编号。
+
+</details>
+
+<details>
+<summary>浏览器多实例（Profile）管理</summary>
+
+如果你需要同时登录多个账号（如个人 + 工作），可以创建多个浏览器实例：
+
+```json
+{
+  "browser": {
+    "enabled": true,
+    "defaultProfile": "chrome",
+    "profiles": {
+      "chrome": { "port": 18800 },
+      "work": { "port": 18801 }
+    }
+  }
+}
+```
+
+每个 Profile 有独立的 Cookie 和登录状态。在对话中指定使用哪个：
+
+```
+用 work 浏览器打开飞书文档
+```
+
+Profile 命名规则：小写字母 + 数字 + 短横线，最长 64 字符。端口范围 18800–18899（最多约 100 个实例）。
+
+</details>
+
+## 5. 定时任务（Cron）
+
+Cron 让龙虾按计划自动执行任务——比如每天早上发天气预报、每周生成工作汇报、每隔一段时间检查邮件。
+
+### 5.1 创建定时任务
+
+```bash
+# 每天早上 8 点发天气预报
+openclaw cron add --name "天气预报" --cron "0 8 * * *" \
+  --message "查询今天的天气，发送给我" \
+  --channel "feishu:chat:你的ChatID"
+
+# 每 30 分钟检查一次
+openclaw cron add --name "定期检查" --every 30m \
+  --message "检查有没有需要我处理的事情"
+
+# 20 分钟后提醒我（一次性）
+openclaw cron add --name "提醒" --at 20m \
+  --message "提醒：该休息一下了！"
+```
+
+三种调度方式：
+- `--cron "表达式"`：标准 Cron 表达式，精确控制执行时间
+- `--every 间隔`：固定周期重复（如 `10m`、`1h`、`6h`）
+- `--at 延时`：从现在起延迟一次性执行
+
+<details>
+<summary>Cron 表达式速查</summary>
+
+Cron 表达式格式：`分 时 日 月 周`
+
+| 表达式 | 含义 |
+|--------|------|
+| `0 8 * * *` | 每天早上 8:00 |
+| `0 9 * * 1-5` | 工作日（周一到周五）上午 9:00 |
+| `*/30 * * * *` | 每 30 分钟 |
+| `0 20 * * 5` | 每周五晚上 8:00 |
+| `0 0 1 * *` | 每月 1 日零点 |
+
+如果不熟悉 Cron 表达式，用 `--every`（周期间隔）或 `--at`（延时一次）更直观。
+
+</details>
+
+### 5.2 管理定时任务
+
+```bash
+# 查看所有任务
+openclaw cron list
+
+# 手动触发一次
+openclaw cron run 天气预报
+
+# 查看执行历史
+openclaw cron runs --id <taskID>
+
+# 暂停 / 恢复任务
+openclaw cron disable 天气预报
+openclaw cron enable 天气预报
+
+# 编辑任务
+openclaw cron edit <jobId>
+
+# 删除任务
+openclaw cron rm <jobId>
+```
+
+> **注意**：Cron 任务依赖 Gateway 持续运行。如果 Gateway 关闭（如电脑关机），任务不会执行。重新启动后任务会自动恢复。
+
+> **`--channel` 参数格式**因平台而异，例如：`feishu:chat:<ChatID>`、`telegram:chat:<ChatID>`、`qqbot:group:<groupid>`。完整格式见[附录 F 命令速查表](/cn/appendix/appendix-f)。
+
+## 6. 命令执行（Exec）
+
+`exec` 工具让龙虾直接在你的电脑上运行 Shell 命令。这是它"干活"最核心的能力——安装软件、处理文件、运行脚本等都靠它。
+
+### 使用示例
+
+```
+帮我创建一个文件叫 hello.txt，写上今天的日期和"Hello from OpenClaw!"
+```
+
+```
+用 Python 写一个猜数字小游戏，保存为 game.py 并运行它
+```
+
+龙虾会自动使用 `exec` 执行命令，每次执行前会请求你确认。
+
+<details>
+<summary>exec 工具的核心参数</summary>
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `command` | 要执行的命令（必填） | — |
+| `timeout` | 超时秒数，超时后终止 | 1800（30 分钟） |
+| `background` | 立即后台运行 | false |
+| `yieldMs` | 超过该毫秒数后自动切后台 | 10000（10 秒） |
+| `pty` | 是否需要真实终端 | false |
+
+后台运行的命令可以通过 `process` 工具管理：
+
+| 操作 | 说明 |
+|------|------|
+| `list` | 列出所有后台进程 |
+| `poll` | 获取新输出和退出状态 |
+| `log` | 查看输出日志 |
+| `write` | 向进程写入输入 |
+| `kill` | 终止进程 |
+| `clear` / `remove` | 清理已完成的进程 |
+
+</details>
+
+<details>
+<summary>exec 安全策略</summary>
+
+exec 工具有三种安全级别：
+
+| 级别 | 说明 |
+|------|------|
+| `deny` | 完全禁止执行命令 |
+| `allowlist` | 仅允许白名单中的命令 |
+| `full` | 允许执行任何命令（需用户确认） |
+
+如果你需要限制龙虾可以执行的命令范围，可以在 `openclaw.json` 中配置 `tools.exec.security` 和对应的白名单。
+
+</details>
+
+## 7. 工具权限管理
+
+有时你需要限制龙虾的能力范围——比如不让它操作浏览器，或者只允许文件操作。
+
+### 7.1 允许 / 禁止特定工具
+
+通过 `tools.allow` 和 `tools.deny` 精确控制。编辑 `~/.openclaw/openclaw.json`：
+
+**禁止浏览器**：
+
+```json
+{
+  "tools": {
+    "deny": ["browser"]
+  }
+}
+```
+
+**只允许文件操作和搜索**：
+
+```json
+{
+  "tools": {
+    "allow": ["group:fs", "group:web"]
+  }
+}
+```
+
+> **规则**：`deny` 优先于 `allow`。匹配不区分大小写，支持 `*` 通配符（`"*"` 表示所有工具）。
+
+修改后运行 `openclaw gateway restart` 生效。
+
+<details>
+<summary>按模型提供商限制工具</summary>
+
+如果你使用多个模型提供商，可以为不同提供商设置不同的工具权限。通过 `tools.byProvider` 配置：
+
+```json
+{
+  "tools": {
+    "profile": "coding",
+    "byProvider": {
+      "google-antigravity": { "profile": "minimal" }
+    }
+  }
+}
+```
+
+`byProvider` 只能**收窄**权限，不能超出全局配置档的范围。支持 `provider`（如 `siliconflow`）或 `provider/model`（如 `openai/gpt-5.2`）两种粒度。
+
+</details>
+
+<details>
+<summary>工具循环检测（Loop Detection）</summary>
+
+如果龙虾陷入反复调用同一工具的死循环，可以启用循环检测：
+
+```json
+{
+  "tools": {
+    "loopDetection": {
+      "enabled": true,
+      "warningThreshold": 10,
+      "criticalThreshold": 20,
+      "globalCircuitBreakerThreshold": 30
+    }
+  }
+}
+```
+
+检测器会识别三种循环模式：
+
+- **重复调用**：相同工具 + 相同参数反复调用
+- **轮询无进展**：反复检查状态但结果不变
+- **乒乓模式**：两个工具交替调用却无进展
+
+默认关闭。如果你发现龙虾偶尔会"卡住"反复做同一件事，可以启用此功能。
+
+</details>
+
+## 8. 插件工具
+
+除了内置工具，OpenClaw 还支持通过插件扩展更多能力：
+
+| 插件 | 说明 |
+|------|------|
+| **Lobster** | 工作流运行时，支持多步骤任务和可恢复的审批流程 |
+| **LLM Task** | JSON 格式的 LLM 调用，用于结构化输出（可选 Schema 校验） |
+| **Diffs** | 文件差异查看器，支持 PNG / PDF 渲染 |
+| **Voice Call** | 语音通话插件 |
+| **Zalo Personal** | Zalo 个人账号插件 |
+
+插件可以注册自己的工具和 CLI 命令。安装和配置详见[附录 G 配置文件详解](/cn/appendix/appendix-g)。
+
+<details>
+<summary>工具如何呈现给 AI 模型</summary>
+
+OpenClaw 通过两个通道让模型"看到"工具：
+
+1. **系统提示词**：人类可读的工具列表 + 使用指南
+2. **工具 Schema**：结构化的函数定义，发送到模型 API
+
+模型同时看到"有哪些工具"和"如何调用它们"。如果一个工具既不在系统提示词中也不在 Schema 中，模型就无法调用它。这就是 `tools.allow` / `tools.deny` 的工作原理——被禁止的工具不会被发送给模型。
+
+</details>
+
+## 9. 常见问题
+
+**Q: 龙虾只会聊天，不执行任何操作？**
+
+A: 工具配置档可能是 `messaging` 或 `minimal`。修复：
+
+```bash
+openclaw config set tools.profile full
+openclaw gateway restart
+```
+
+**Q: 联网搜索不可用？**
+
+A: 需要配置搜索引擎 API Key。运行 `openclaw configure --section web` 进行设置。没有 API Key 之前，搜索功能无法使用。
+
+**Q: 浏览器工具报错？**
+
+A: 先确认浏览器已启用（`openclaw config get browser.enabled`），再确保系统安装了 Chrome 或 Chromium。Linux 服务器（无图形界面）需要安装 Chromium headless 模式。WSL2 用户可能需要额外配置，详见[附录 G 配置文件详解](/cn/appendix/appendix-g)。
+
+**Q: 定时任务没有执行？**
+
+A: 检查 Gateway 是否在运行（`openclaw status`）。Cron 任务依赖 Gateway 持续运行——电脑关机或 Gateway 停止期间的任务不会补执行。
+
+**Q: 如何知道龙虾调用了哪些工具？**
+
+A: 在 Web 控制面板（`openclaw dashboard`）中查看对话详情可以看到每次工具调用。也可以查看日志：
+
+```bash
+openclaw logs --limit 50
+```
 
 ---
 
 **下一步**：
-- 查看完整配置参考 → [附录 G 配置文件详解](/cn/appendix/appendix-g)
-- 查看命令速查 → [附录 F 命令速查表](/cn/appendix/appendix-f)
+- 想了解更多配置细节？→ [附录 G 配置文件详解](/cn/appendix/appendix-g)

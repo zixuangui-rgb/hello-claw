@@ -102,7 +102,7 @@ clawhub install gog
 - 技能发布、版本与安装入口：  
   [ClawHub 原版](https://clawhub.ai/) ｜ [中文 ClawHub（腾讯 SkillHub）](https://skillhub.tencent.com/#categories)
 - 本教程 Tools 章节（工具集、定时任务、Web 搜索）：
-  [第六章 Tools 配置](/cn/adopt/chapter6/)
+  [第七章 工具与定时任务](/cn/adopt/chapter7/)
 - 技能开发与发布流程：
   [附录 D 技能开发与发布指南](/cn/appendix/appendix-d)
 
