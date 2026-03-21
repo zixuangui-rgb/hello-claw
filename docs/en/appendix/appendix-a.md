@@ -297,6 +297,7 @@ The biggest challenge in learning OpenClaw isn't the technology itself — it's 
 | ⭐ Awesome OpenClaw | <https://github.com/SamurAIGPT/awesome-openclaw> | The most comprehensive resource compendium with 100+ project links |
 | CoClaw Community Resource Center | <https://coclaw.com> | Community-maintained OpenClaw resource hub covering guides, troubleshooting, config generation, and featured articles (unofficial) |
 | Use Cases Collection | <https://github.com/hesamsheikh/awesome-openclaw-usecases> | Community application cases with 36 real-world validated scenarios |
+| ZooClaw Help Center | <https://zooclaw.ai/help> | ZooClaw official help documentation and user guide |
 ---
 
 ## Recommended Learning Paths

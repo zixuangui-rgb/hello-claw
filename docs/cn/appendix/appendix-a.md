@@ -297,6 +297,7 @@ next:
 | ⭐ Awesome OpenClaw | <https://github.com/SamurAIGPT/awesome-openclaw> | 最全面的资源汇总，100+ 项目链接 |
 | CoClaw 社区资源中心 | <https://coclaw.com> | 社区维护的 OpenClaw 资源枢纽，覆盖指南、排错、配置生成与专题文章（非官方） |
 | 用例集合 | <https://github.com/hesamsheikh/awesome-openclaw-usecases> | 社区应用案例，36 个真实场景验证 |
+| ZooClaw 帮助中心 | <https://zooclaw.ai/help> | ZooClaw 官方帮助文档与使用指南 |
 ---
 
 ## 推荐学习路径
