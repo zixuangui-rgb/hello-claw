@@ -217,12 +217,54 @@ export default defineConfig({
               text: '龙虾大学',
               items: [
                 { text: '写在开头与选修指南', link: '/cn/university/intro.html' },
-                { text: '邮箱助手实战（163）', link: '/cn/university/email-assistant/' },
-                { text: '多智能体协作（HiClaw）', link: '/cn/university/multi-claw-hiclaw/' },
                 { text: '安全防护清单', link: '/cn/university/security/' },
-                { text: 'Vibe Coding 实战', link: '/cn/university/vibe-coding/' },
-                { text: 'Agent 论文推送助手', link: '/cn/university/paper-assistant/' },
+              ]
+            },
+            {
+              text: '🌅 个人效率',
+              items: [
+                { text: '邮箱助手实战（163）', link: '/cn/university/email-assistant/' },
+                { text: '早间简报自动化', link: '/cn/university/daily-briefing/' },
+                { text: '智能日程管理', link: '/cn/university/calendar-ops/' },
                 { text: '本地健康管理助手', link: '/cn/university/local-health-assistant/' },
+              ]
+            },
+            {
+              text: '💻 编程开发',
+              items: [
+                { text: 'Vibe Coding 实战', link: '/cn/university/vibe-coding/' },
+                { text: '自动化测试与部署', link: '/cn/university/ci-cd-assistant/' },
+                { text: '文档自动生成', link: '/cn/university/docs-automation/' },
+              ]
+            },
+            {
+              text: '📢 内容创作',
+              items: [
+                { text: '语音调研实战', link: '/cn/university/voice-research/' },
+                { text: '社交媒体自动运营与分发', link: '/cn/university/content-studio/' },
+              ]
+            },
+            {
+              text: '🏢 商务销售',
+              items: [
+                { text: '客户支持与 CRM 协同', link: '/cn/university/revops-assistant/' },
+                { text: '会议预约与纪要自动化', link: '/cn/university/meeting-ops/' },
+              ]
+            },
+            {
+              text: '🤖 多智能体协作',
+              items: [
+                { text: '多智能体协作（HiClaw）', link: '/cn/university/multi-claw-hiclaw/' },
+                { text: '知识库共享与检索', link: '/cn/university/knowledge-base/' },
+              ]
+            },
+            {
+              text: '🔧 更多场景',
+              items: [
+                { text: 'Agent 论文推送助手', link: '/cn/university/paper-assistant/' },
+                { text: '智能家居控制', link: '/cn/university/smart-home-control/' },
+                { text: '金融数据分析', link: '/cn/university/finance-research/' },
+                { text: '教育培训辅助', link: '/cn/university/training-assistant/' },
               ]
             }
           ]
@@ -408,6 +450,7 @@ export default defineConfig({
                 { text: 'Security Checklist', link: '/en/university/security/' },
                 { text: 'Vibe Coding Hands-On', link: '/en/university/vibe-coding/' },
                 { text: 'Paper Push Assistant', link: '/en/university/paper-assistant/' },
+                { text: 'Voice Research in Practice', link: '/en/university/voice-research/' },
                 { text: 'Local Health Assistant', link: '/en/university/local-health-assistant/' },
               ]
             }

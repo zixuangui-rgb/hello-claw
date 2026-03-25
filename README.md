@@ -123,18 +123,6 @@ https://datawhalechina.github.io/hello-claw
 
 ---
 
-### 第三部分：龙虾大学（场景实战篇）
-
-| 文章                                                                                    | 简介                                                         | 状态 |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ---- |
-| [龙虾大学：写在开头与 Skills 选修指南](./docs/cn/university/intro.md)                      | ClawHub 与 SkillHub 双入口、技能分类地图、选课原则与推荐课表 | ✅   |
-| [Vibe Coding 实战](./docs/cn/university/vibe-coding/index.md)                              | 飞书对话驱动需求到 PR，全流程“对话即开发”闭环              | ✅   |
-| [邮箱助手实战（163）](./docs/cn/university/email-assistant/index.md)                       | 从 IMAP/SMTP 配置到脚本验证与 cron 定时，跑通邮件自动化      | ✅   |
-| [多智能体协作（Multi OpenClaw / HiClaw）](./docs/cn/university/multi-claw-hiclaw/index.md) | 从单 Worker 瓶颈到多智能体协作，落地可追踪的任务编排         | ✅   |
-| [安全防护清单](./docs/cn/university/security/index.md)                                     | 技能与工具的安全边界、审计与防注入要点                       | ✅   |
-| [Skill 开发实战：本地健康管理助手](./docs/cn/university/local-health-assistant/index.md)   | 基于 MediWise 搭建本地优先的家庭健康管理闭环                 | ✅   |
----
-
 > 🎉 **欢迎大家来贡献案例！**
 >
 > 如果你有独特的 OpenClaw 使用场景或实践经验，欢迎通过以下方式分享：
@@ -145,47 +133,47 @@ https://datawhalechina.github.io/hello-claw
 >
 > 每一份贡献都能帮助更多人发现 OpenClaw 的可能性！
 
-## 🦞 应用场景大全（持续更新）
+## 🦞 龙虾大学
 
 <table align="center">
   <tr>
     <td valign="top" width="33%">
       <b>🌅 个人效率</b><br>
-      • 早间简报（天气+日程+待办）<br>
-      • 邮件自动分类与摘要<br>
-      • 智能日程管理
+      • <a href="./docs/cn/university/email-assistant/index.md">邮箱助手实战（163）</a><br>
+      • <a href="./docs/cn/university/local-health-assistant/index.md">Skill 开发实战：本地健康管理助手</a><br>
+      • <a href="./docs/cn/university/daily-briefing/index.md">早间简报自动化</a><br>
+      • <a href="./docs/cn/university/calendar-ops/index.md">智能日程管理</a>
     </td>
     <td valign="top" width="33%">
       <b>💻 编程开发</b><br>
-      • 代码生成与审查<br>
-      • 自动化测试与部署<br>
-      • 文档自动生成
+      • <a href="./docs/cn/university/vibe-coding/index.md">Vibe Coding 实战</a><br>
+      • <a href="./docs/cn/university/ci-cd-assistant/index.md">自动化测试与部署：CI/CD 助手实战</a><br>
+      • <a href="./docs/cn/university/docs-automation/index.md">文档自动生成：从代码变更到可发布文档</a>
     </td>
     <td valign="top" width="33%">
       <b>📢 内容创作</b><br>
-      • 社交媒体自动运营<br>
-      • 写作辅助与润色<br>
-      • 多平台内容发布
+      • <a href="./docs/cn/university/voice-research/index.md">语音调研实战</a><br>
+      • <a href="./docs/cn/university/content-studio/index.md">内容创作工作室：社媒运营、写作润色与多平台发布</a>
     </td>
   </tr>
   <tr>
     <td valign="top" width="33%">
       <b>🏢 商务销售</b><br>
-      • 客户支持与CRM管理<br>
-      • 销售线索自动跟进<br>
-      • 会议预约与纪要
+      • <a href="./docs/cn/university/revops-assistant/index.md">商务销售实战：客户支持与 CRM 协同助手</a><br>
+      • <a href="./docs/cn/university/meeting-ops/index.md">商务销售实战：会议预约与纪要自动化</a>
     </td>
     <td valign="top" width="33%">
       <b>🤖 多智能体协作</b><br>
-      • 智能体团队项目管理<br>
-      • 自动化工作流编排<br>
-      • 知识库共享与检索
+      • <a href="./docs/cn/university/multi-claw-hiclaw/index.md">多智能体协作（Multi OpenClaw / HiClaw）</a><br>
+      • <a href="./docs/cn/university/knowledge-base/index.md">多智能体协作实战：知识库共享与检索</a>
     </td>
     <td valign="top" width="33%">
       <b>🔧 更多场景</b><br>
-      • 智能家居控制<br>
-      • 金融数据分析<br>
-      • 教育培训辅助
+      • <a href="./docs/cn/university/security/index.md">安全防护清单</a><br>
+      • <a href="./docs/cn/university/paper-assistant/index.md">Agent 论文推送助手</a><br>
+      • <a href="./docs/cn/university/smart-home-control/index.md">更多场景实战：智能家居控制助手</a><br>
+      • <a href="./docs/cn/university/finance-research/index.md">更多场景实战：金融数据分析助手</a><br>
+      • <a href="./docs/cn/university/training-assistant/index.md">更多场景实战：教育培训辅助助手</a>
     </td>
   </tr>
 </table>
