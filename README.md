@@ -237,3 +237,7 @@ https://datawhalechina.github.io/hello-claw
 <div align="center">
   <h3>⭐ 如果这个项目对你有帮助，请给我们一个 Star ❤️</h3>
 </div>
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=datawhalechina/hello-claw&type=Date)](https://star-history.com/?type=date&legend=top-left&repos=datawhalechina%2Fhello-claw)
